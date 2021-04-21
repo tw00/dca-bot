@@ -1,10 +1,6 @@
 ## DCA Bot
 
-Run Simulation:
-
-```bash
-ts-node main.ts
-```
+### Gathering Ticker Data
 
 Subscribe to Coinbase WebSocket and stream to DB:
 
@@ -18,7 +14,15 @@ Read DB:
 node read.ts
 ```
 
-### Example
+### Simulation
+
+Run Simulation:
+
+```bash
+ts-node main.ts
+```
+
+#### Example
 
 ```js
 Simulation {
