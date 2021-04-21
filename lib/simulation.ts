@@ -13,7 +13,7 @@ export default class Simulation {
     this.exchange = new Exchange();
     this.bots = [];
     this.options = {
-      symbol: "BTC",
+      symbol: "ETH",
       ...options,
     };
   }
@@ -42,18 +42,20 @@ export default class Simulation {
   }
 
   tick(data: CoinbaseTickerData) {
-    for (const bot of this.bots) {
-      const orders = bot.decide(data);
-      if (orders) {
-        orders.forEach((order) => this.exchange.addOrder(order));
-      }
-    }
-
     const tick: TickInfo = {
       price: Number(data.price),
       time: +new Date(data.time),
       symbol: this.options.symbol,
     };
+
+    for (const bot of this.bots) {
+      const orders = bot.decide(tick);
+
+      if (orders) {
+        console.log("Bot created orders", orders);
+        orders.forEach((order) => this.exchange.addOrder(order));
+      }
+    }
 
     console.log("tick:", tick);
     this.exchange.feed(tick);
