@@ -20,7 +20,7 @@ export default class Portfolio {
   }
 
   addPosition(position: PositionUpdate): void {
-    console.log("New position", position);
+    // console.log("New position", position);
 
     if (!(position.symbol in this.positions)) {
       this.positions[position.symbol] = 0;

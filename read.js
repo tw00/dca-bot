@@ -38,7 +38,7 @@ class DB {
 }
 
 (async () => {
-  // const db = new DB("eth-usd");
+  // const db = new DB("ETH-USD");
   const db = new DB("BTC-USD");
   const foobar = await db.read(null, null, true);
   console.log(foobar.map((x) => [x.time, x.price]));
