@@ -20,7 +20,7 @@ node read.ts
 
 ### Example
 
-```json
+```js
 Simulation {
   exchange: Exchange {
     orderbook: [],
