@@ -1,8 +1,9 @@
 import Bot from "./bot";
 import Order, { OrderSide, OrderType } from "../lib/order";
 import { TickInfo } from "../lib/exchange";
+import configs from "./dca-config";
 
-interface IDCABotConfig {
+export interface IDCABotConfig {
   symbol: "ETH" | "BTC";
   baseOrder: number;
   safetyOrder: number;
@@ -13,40 +14,100 @@ interface IDCABotConfig {
   safetyOrderDeviationScale: number;
 }
 
-const defaultConfig: IDCABotConfig = {
-  symbol: "ETH",
-  baseOrder: 25,
-  safetyOrder: 50,
-  takeProfit: 1.5, // percent
-  maxCount: 6,
-  // safetyOrderDeviation: 2.0, // percent
-  safetyOrderDeviation: 2.0 / 56000, // percent
-  safetyOrderVolumeScale: 1.05,
-  safetyOrderDeviationScale: 1,
-};
+type ConfigPreset = "TradeAltCoins" | "Vincent";
+
+const range = (from, to) =>
+  [...Array(to - from + 1).keys()].map((v) => v + from);
 
 export default class DCABot implements Bot {
   config: IDCABotConfig;
-  // entry: number;
   active: number;
   amountSpend: number;
   amountBought: number;
   lastPrice: number;
   averagePrice: number;
 
-  constructor(options = {}) {
-    // this.entry = 0;
-    this.config = { ...defaultConfig, ...options };
+  constructor(preset: ConfigPreset, options: Partial<IDCABotConfig>) {
+    this.config = { ...configs[preset], ...options };
     this.reset();
   }
 
   reset() {
     this.active = 0;
     this.amountSpend = 0;
+    this.amountBought = 0;
+    this.lastPrice = 0;
     this.averagePrice = 0;
   }
 
+  crunch(entryPrice) {
+    const steps = [];
+    let safetyOrderDeviation = 0;
+    let safetyOrderAmountBase = this.config.safetyOrder;
+    let maxDrawdownBase = this.config.baseOrder;
+    let amountSpendBase = this.config.baseOrder / entryPrice;
+    let averagePrice = entryPrice;
+    let profitTarget = averagePrice * (1 + this.config.takeProfit / 100);
+
+    steps.push({
+      orderNo: 0,
+      safetyOrderDeviation,
+      order: this.config.baseOrder,
+      maxDrawdownBase,
+      amountSpendBase,
+      price: entryPrice,
+      averagePrice,
+      profitTarget,
+    });
+
+    let price, fee;
+    for (const orderNo of range(1, this.config.maxCount)) {
+      safetyOrderDeviation +=
+        this.config.safetyOrderDeviation +
+        safetyOrderDeviation * (this.config.safetyOrderDeviationScale - 1);
+
+      // TODO: Add fee
+      fee = 0;
+      safetyOrderAmountBase =
+        safetyOrderAmountBase *
+          (orderNo > 1 ? this.config.safetyOrderVolumeScale : 1) +
+        fee;
+      price = entryPrice * (1 - safetyOrderDeviation / 100);
+
+      maxDrawdownBase += safetyOrderAmountBase;
+      amountSpendBase += safetyOrderAmountBase / price;
+      averagePrice = maxDrawdownBase / amountSpendBase;
+      profitTarget = averagePrice * (1 + this.config.takeProfit / 100);
+
+      steps.push({
+        orderNo,
+        safetyOrderDeviation,
+        order: safetyOrderAmountBase,
+        maxDrawdownBase, // = amountBoughtBase
+        amountSpendBase,
+        price,
+        averagePrice,
+        profitTarget, // = requiredPrice
+      });
+    }
+    return steps;
+  }
+
+  summary(entryPrice) {
+    const steps = this.crunch(entryPrice);
+
+    // Max amount for bot usage (Based on current rate)
+    const maxBotUsageBase = steps[steps.length - 1].maxDrawdownBase;
+
+    // Max safe order price deviation
+    const maxDeviation = steps[steps.length - 1].safetyOrderDeviation;
+
+    return { maxBotUsageBase, maxDeviation };
+  }
+
   decide(tick: TickInfo) {
+    // TODO: Price is always Base/Quote
+
     if (this.active === 0) {
       const amount = this.config.baseOrder / tick.price;
       this.active = 1;
@@ -54,29 +115,31 @@ export default class DCABot implements Bot {
       this.averagePrice = tick.price;
       this.amountBought = amount;
       this.lastPrice = tick.price;
+      // this.tab = this.crunch();
       return [
-        new Order(
-          OrderSide.BUY,
-          this.config.symbol,
-          0,
-          amount,
-          OrderType.MARKET
-        ),
+        new Order(OrderSide.BUY, OrderType.MARKET, this.config.symbol, amount),
       ];
       // TODO: Immediatley place sell order?
     }
 
-    const profitTarget = this.averagePrice * (1 + this.config.takeProfit / 100);
+    const profitTargetBase =
+      this.averagePrice * (1 + this.config.takeProfit / 100);
+    const profitTargetQuote = profitTargetBase / tick.price;
 
-    if (tick.price > profitTarget) {
+    console.log("profitTargetBase", {
+      price: tick.price,
+      profitTargetBase,
+      profitTargetQuote,
+    });
+
+    if (tick.price > profitTargetBase) {
       this.reset();
       return [
         new Order(
           OrderSide.SELL,
+          OrderType.MARKET,
           this.config.symbol,
-          0,
-          this.amountBought,
-          OrderType.MARKET
+          this.amountBought
         ),
       ];
     }
@@ -86,31 +149,44 @@ export default class DCABot implements Bot {
         this.config.safetyOrderDeviation +
         this.config.safetyOrderDeviationScale * (this.active - 1);
 
-      const nextThreshold = this.lastPrice * (1 - safetyOrderDeviation / 100);
+      const nextThresholdBase =
+        this.lastPrice * (1 - safetyOrderDeviation / 100);
+      const nextThresholdQuote = nextThresholdBase / tick.price;
 
+      // TODO: Wrong currency - SO is in relation to base currency
+      console.log("nextThreshold", {
+        price: tick.price,
+        nextThresholdBase,
+        nextThresholdQuote,
+      });
 
-      if (tick.price <= nextThreshold) {
+      if (tick.price <= nextThresholdBase) {
         this.active += 1;
         this.lastPrice = tick.price;
 
-        const safetyOrderAmount =
+        const safetyOrderAmountBase =
           this.config.safetyOrder *
           this.config.safetyOrderVolumeScale *
           (this.active - 1);
 
-        const amount = safetyOrderAmount / tick.price;
+        const safetyOrderAmountQuote = safetyOrderAmountBase / tick.price;
 
-        this.amountSpend += safetyOrderAmount;
+        console.log("safetyOrderAmount", {
+          price: tick.price,
+          safetyOrderAmountBase,
+          safetyOrderAmountQuote,
+        });
+
+        this.amountSpend += safetyOrderAmountBase;
         this.averagePrice = this.amountSpend / this.amountBought; // TODO
-        this.amountBought += amount;
+        this.amountBought += safetyOrderAmountQuote;
 
         return [
           new Order(
             OrderSide.BUY,
+            OrderType.MARKET,
             this.config.symbol,
-            0,
-            amount,
-            OrderType.MARKET
+            safetyOrderAmountQuote
           ),
         ];
       }

@@ -18,10 +18,10 @@ export default class Order {
 
   constructor(
     side: OrderSide,
+    type: OrderType = OrderType.STOP,
     symbol: string,
-    price: number,
     amount: number,
-    type: OrderType = OrderType.STOP
+    price: number = 0
   ) {
     this.side = side;
     this.symbol = symbol;
