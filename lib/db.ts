@@ -1,5 +1,5 @@
-import * as levelup from "levelup";
-import * as leveldown from "leveldown";
+import { default as levelup } from "levelup";
+import { default as leveldown } from "leveldown";
 
 export interface CoinbaseTickerData {
   type: string;
