@@ -1,7 +1,7 @@
 import Bot from "./bot";
 import Order, { OrderSide, OrderType } from "../lib/order";
 import { TickInfo } from "../lib/exchange";
-import configs from "./dca-config";
+import configs, { ConfigPreset } from "./dca-config";
 
 export interface IDCABotConfig {
   symbol: "ETH" | "BTC";
@@ -37,8 +37,6 @@ export interface IDCAStep {
   // safetyOrderAmountQuote
 }
 
-type ConfigPreset = "TradeAltCoins" | "Vincent";
-
 const range = (from, to) =>
   [...Array(to - from + 1).keys()].map((v) => v + from);
 
@@ -46,9 +44,11 @@ export default class DCABot implements Bot {
   config: IDCABotConfig;
   tab: IDCAStep[];
   active: number;
+  completedDeals: number;
 
   constructor(preset: ConfigPreset, options: Partial<IDCABotConfig>) {
     this.config = { ...configs[preset], ...options };
+    this.completedDeals = 0;
     this.reset();
   }
 
@@ -143,6 +143,7 @@ export default class DCABot implements Bot {
 
     if (tick.price > profitTargetBase) {
       this.reset();
+      this.completedDeals += 1;
       return [
         new Order(
           OrderSide.SELL,

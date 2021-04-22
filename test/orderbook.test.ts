@@ -2,7 +2,7 @@ import Simulation from "../lib/simulation";
 import Order, { OrderSide, OrderType } from "../lib/order";
 
 describe("orderbook", () => {
-  it.skip("should work", async () => {
+  it("should work", async () => {
     const sim = new Simulation({ symbol: "BTC" });
 
     const testorder1 = new Order(
@@ -23,9 +23,20 @@ describe("orderbook", () => {
     sim.exchange.addOrder(testorder1);
     sim.exchange.addOrder(testorder2);
 
+    const backupConsoleLog = console.log;
+    console.log = (...args) => {};
+    console.warn = jest.fn(() => {});
+
     await sim.init();
     await sim.run();
 
+    expect(console.warn).toHaveBeenCalled();
+
+    const res = [];
+    console.log = (...args) =>
+      res.push(args.map((x) => JSON.stringify(x, null, 2)).join(" "));
     sim.exchange.portfolio.print();
+    console.log = backupConsoleLog;
+    expect(res).toMatchSnapshot();
   });
 });

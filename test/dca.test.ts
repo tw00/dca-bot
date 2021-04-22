@@ -10,7 +10,7 @@ describe("DCA Bot", () => {
   let spend = 0;
 
   beforeAll(() => {
-    bot = new DCABot("TradeAltCoins", { symbol: "BTC" });
+    bot = new DCABot("Test", { symbol: "BTC" });
   });
 
   it("initialize correctly", async () => {
