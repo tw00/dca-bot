@@ -1,12 +1,24 @@
 import Simulation from "../lib/simulation";
-import Order, { OrderSide } from "../lib/order";
+import Order, { OrderSide, OrderType } from "../lib/order";
 
 describe("orderbook", () => {
-  it('should work', () => {
-    const sim = new Simulation();
+  it.skip("should work", async () => {
+    const sim = new Simulation({ symbol: "BTC" });
 
-    const testorder1 = new Order(OrderSide.BUY, "BTC", 56205, 0.01);
-    const testorder2 = new Order(OrderSide.SELL, "BTC", 56202, 0.005);
+    const testorder1 = new Order(
+      OrderSide.BUY,
+      OrderType.STOP,
+      "BTC",
+      0.01,
+      56205
+    );
+    const testorder2 = new Order(
+      OrderSide.SELL,
+      OrderType.STOP,
+      "BTC",
+      0.005,
+      56202
+    );
 
     sim.exchange.addOrder(testorder1);
     sim.exchange.addOrder(testorder2);
@@ -15,5 +27,5 @@ describe("orderbook", () => {
     await sim.run();
 
     sim.exchange.portfolio.print();
-  })
-};
+  });
+});
