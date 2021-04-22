@@ -12,6 +12,17 @@ const defaultConfig: IDCABotConfig = {
   safetyOrderDeviationScale: 1.01,
 };
 
+const testConfig: IDCABotConfig = {
+  symbol: "ETH",
+  baseOrder: 25,
+  safetyOrder: 50,
+  takeProfit: 1.5, // percent
+  maxCount: 6,
+  safetyOrderDeviation: 2.0, // percent
+  safetyOrderVolumeScale: 1.05,
+  safetyOrderDeviationScale: 1.01,
+};
+
 // BO 20 / SO 40 (40/80)
 // Take profit: 1%
 // Max safety order count: 6
@@ -21,4 +32,5 @@ const defaultConfig: IDCABotConfig = {
 
 export default {
   TradeAltCoins: defaultConfig,
+  Test: testConfig,
 };

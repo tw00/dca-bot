@@ -14,6 +14,29 @@ export interface IDCABotConfig {
   safetyOrderDeviationScale: number;
 }
 
+export interface IDCAStep {
+  orderNo: number;
+  safetyOrderDeviation: number;
+  order: number;
+  maxDrawdownBase: number;
+  amountSpendBase: number;
+  price: number;
+  averagePrice: number;
+  profitTargetBase: number;
+
+  // amountSpend
+  // averagePrice
+  // amountBought
+  // lastPrice
+  // profitTargetBase
+  // profitTargetQuote
+  // safetyOrderDeviation
+  // nextThresholdBase
+  // nextThresholdQuote
+  // safetyOrderAmountBase
+  // safetyOrderAmountQuote
+}
+
 type ConfigPreset = "TradeAltCoins" | "Vincent";
 
 const range = (from, to) =>
@@ -21,11 +44,8 @@ const range = (from, to) =>
 
 export default class DCABot implements Bot {
   config: IDCABotConfig;
+  tab: IDCAStep[];
   active: number;
-  amountSpend: number;
-  amountBought: number;
-  lastPrice: number;
-  averagePrice: number;
 
   constructor(preset: ConfigPreset, options: Partial<IDCABotConfig>) {
     this.config = { ...configs[preset], ...options };
@@ -34,20 +54,16 @@ export default class DCABot implements Bot {
 
   reset() {
     this.active = 0;
-    this.amountSpend = 0;
-    this.amountBought = 0;
-    this.lastPrice = 0;
-    this.averagePrice = 0;
   }
 
-  crunch(entryPrice) {
-    const steps = [];
+  crunch(entryPrice: number): IDCAStep[] {
+    const steps: IDCAStep[] = [];
     let safetyOrderDeviation = 0;
     let safetyOrderAmountBase = this.config.safetyOrder;
     let maxDrawdownBase = this.config.baseOrder;
     let amountSpendBase = this.config.baseOrder / entryPrice;
     let averagePrice = entryPrice;
-    let profitTarget = averagePrice * (1 + this.config.takeProfit / 100);
+    let profitTargetBase = averagePrice * (1 + this.config.takeProfit / 100);
 
     steps.push({
       orderNo: 0,
@@ -57,7 +73,7 @@ export default class DCABot implements Bot {
       amountSpendBase,
       price: entryPrice,
       averagePrice,
-      profitTarget,
+      profitTargetBase,
     });
 
     let price, fee;
@@ -77,7 +93,7 @@ export default class DCABot implements Bot {
       maxDrawdownBase += safetyOrderAmountBase;
       amountSpendBase += safetyOrderAmountBase / price;
       averagePrice = maxDrawdownBase / amountSpendBase;
-      profitTarget = averagePrice * (1 + this.config.takeProfit / 100);
+      profitTargetBase = averagePrice * (1 + this.config.takeProfit / 100);
 
       steps.push({
         orderNo,
@@ -87,13 +103,13 @@ export default class DCABot implements Bot {
         amountSpendBase,
         price,
         averagePrice,
-        profitTarget, // = requiredPrice
+        profitTargetBase, // = requiredPrice
       });
     }
     return steps;
   }
 
-  summary(entryPrice) {
+  summary(entryPrice: number) {
     const steps = this.crunch(entryPrice);
 
     // Max amount for bot usage (Based on current rate)
@@ -105,32 +121,25 @@ export default class DCABot implements Bot {
     return { maxBotUsageBase, maxDeviation };
   }
 
-  decide(tick: TickInfo) {
-    // TODO: Price is always Base/Quote
-
+  decide(tick: TickInfo): Order[] {
     if (this.active === 0) {
-      const amount = this.config.baseOrder / tick.price;
+      const baseOrderQuote = this.config.baseOrder / tick.price;
       this.active = 1;
-      this.amountSpend = this.config.baseOrder;
-      this.averagePrice = tick.price;
-      this.amountBought = amount;
-      this.lastPrice = tick.price;
-      // this.tab = this.crunch();
+      this.tab = this.crunch(tick.price);
       return [
-        new Order(OrderSide.BUY, OrderType.MARKET, this.config.symbol, amount),
+        new Order(
+          OrderSide.BUY,
+          OrderType.MARKET,
+          this.config.symbol,
+          baseOrderQuote
+        ),
       ];
       // TODO: Immediatley place sell order?
     }
 
-    const profitTargetBase =
-      this.averagePrice * (1 + this.config.takeProfit / 100);
-    const profitTargetQuote = profitTargetBase / tick.price;
-
-    console.log("profitTargetBase", {
-      price: tick.price,
-      profitTargetBase,
-      profitTargetQuote,
-    });
+    const step = this.tab[this.active];
+    const profitTargetBase = step.profitTargetBase;
+    const amountBoughtBase = step.maxDrawdownBase - step.order;
 
     if (tick.price > profitTargetBase) {
       this.reset();
@@ -139,54 +148,24 @@ export default class DCABot implements Bot {
           OrderSide.SELL,
           OrderType.MARKET,
           this.config.symbol,
-          this.amountBought
+          amountBoughtBase / tick.price
         ),
       ];
     }
 
     if (this.active > 0 && this.active < this.config.maxCount) {
-      const safetyOrderDeviation =
-        this.config.safetyOrderDeviation +
-        this.config.safetyOrderDeviationScale * (this.active - 1);
-
-      const nextThresholdBase =
-        this.lastPrice * (1 - safetyOrderDeviation / 100);
-      const nextThresholdQuote = nextThresholdBase / tick.price;
-
-      // TODO: Wrong currency - SO is in relation to base currency
-      console.log("nextThreshold", {
-        price: tick.price,
-        nextThresholdBase,
-        nextThresholdQuote,
-      });
+      const nextThresholdBase = step.price;
+      const safetyOrderAmountBase = step.order;
 
       if (tick.price <= nextThresholdBase) {
         this.active += 1;
-        this.lastPrice = tick.price;
-
-        const safetyOrderAmountBase =
-          this.config.safetyOrder *
-          this.config.safetyOrderVolumeScale *
-          (this.active - 1);
-
-        const safetyOrderAmountQuote = safetyOrderAmountBase / tick.price;
-
-        console.log("safetyOrderAmount", {
-          price: tick.price,
-          safetyOrderAmountBase,
-          safetyOrderAmountQuote,
-        });
-
-        this.amountSpend += safetyOrderAmountBase;
-        this.averagePrice = this.amountSpend / this.amountBought; // TODO
-        this.amountBought += safetyOrderAmountQuote;
 
         return [
           new Order(
             OrderSide.BUY,
             OrderType.MARKET,
             this.config.symbol,
-            safetyOrderAmountQuote
+            safetyOrderAmountBase / tick.price // TODO
           ),
         ];
       }

@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`DCA Bot crunch 1`] = `
+exports[`DCA Bot crunch correctly 1`] = `
 Array [
   Object {
     "amountSpendBase": 20.836806134355726,
@@ -9,7 +9,7 @@ Array [
     "order": 25,
     "orderNo": 0,
     "price": 1.1998,
-    "profitTarget": 1.2177969999999998,
+    "profitTargetBase": 1.2177969999999998,
     "safetyOrderDeviation": 0,
   },
   Object {
@@ -19,7 +19,7 @@ Array [
     "order": 50,
     "orderNo": 1,
     "price": 1.1758039999999998,
-    "profitTarget": 1.2014507315436238,
+    "profitTargetBase": 1.2014507315436238,
     "safetyOrderDeviation": 2,
   },
   Object {
@@ -29,7 +29,7 @@ Array [
     "order": 52.5,
     "orderNo": 2,
     "price": 1.15156804,
-    "profitTarget": 1.1878055729040111,
+    "profitTargetBase": 1.1878055729040111,
     "safetyOrderDeviation": 4.02,
   },
   Object {
@@ -39,7 +39,7 @@ Array [
     "order": 55.125,
     "orderNo": 3,
     "price": 1.1270897203999999,
-    "profitTarget": 1.1742322491186892,
+    "profitTargetBase": 1.1742322491186892,
     "safetyOrderDeviation": 6.0602,
   },
   Object {
@@ -49,7 +49,7 @@ Array [
     "order": 57.88125,
     "orderNo": 4,
     "price": 1.102366617604,
-    "profitTarget": 1.1604221386287956,
+    "profitTargetBase": 1.1604221386287956,
     "safetyOrderDeviation": 8.120802000000001,
   },
   Object {
@@ -59,7 +59,7 @@ Array [
     "order": 60.775312500000005,
     "orderNo": 5,
     "price": 1.07739628378004,
-    "profitTarget": 1.1462836336189053,
+    "profitTargetBase": 1.1462836336189053,
     "safetyOrderDeviation": 10.202010020000001,
   },
   Object {
@@ -69,7 +69,7 @@ Array [
     "order": 63.81407812500001,
     "orderNo": 6,
     "price": 1.0521762466178404,
-    "profitTarget": 1.1317753997714677,
+    "profitTargetBase": 1.1317753997714677,
     "safetyOrderDeviation": 12.304030120200002,
   },
 ]
