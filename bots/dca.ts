@@ -4,7 +4,7 @@ import { TickInfo } from "../lib/exchange";
 import configs, { ConfigPreset } from "./dca-config";
 
 export interface IDCABotConfig {
-  symbol: "ETH" | "BTC";
+  symbol?: "ETH" | "BTC" | "REN" | string;
   baseOrder: number;
   safetyOrder: number;
   takeProfit: number;

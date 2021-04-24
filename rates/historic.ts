@@ -35,7 +35,8 @@ async function throttledFetch(url) {
   return await fetchCoinbase(url);
 }
 
-const productId = "BTC-USD";
+// const productId = "BTC-USD";
+const productId = "REN-USD";
 const feed = new DB<CoinbaseHistoricalData>(productId, DBType.HISTORIC);
 // const startDate = new Date().setHours(0, 0, 0, 0);
 const startDate = new Date("2021-04-01T04:00:00.000Z");
@@ -78,6 +79,10 @@ while (current < +new Date()) {
       // - open: opening price (first trade) in the bucket interval
       // - close: closing price (last trade) in the bucket interval
       // - volume: volume of trading activity during the bucket interval
+      if (!Array.isArray(result)) {
+        console.warn("Result is not an array", result);
+        return;
+      }
       result.forEach((candle) => {
         feed.append({
           type: "candle",

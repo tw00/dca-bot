@@ -80,7 +80,7 @@ export default class Simulation {
       const orders = bot.decide(tick);
 
       if (orders) {
-        console.log("Bot created orders", orders);
+        console.log("Bot created order", orders);
         orders.forEach((order) => this.exchange.addOrder(order));
       }
     }
