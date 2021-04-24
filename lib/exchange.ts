@@ -7,6 +7,7 @@ export interface TickInfo {
   price: number;
 }
 
+}
 export default class Exchange {
   orderbook: Order[];
   executedOrder: Order[];
@@ -36,13 +37,16 @@ export default class Exchange {
   closePosition(symbol) {
     if (symbol == this.lastTick.symbol) {
       const amount = -this.portfolio.getFunds(symbol);
-      this.transaction(symbol, "USD", this.lastTick.price, amount, false);
+      this.transaction(symbol, "USD", this.lastTick.price, amount, {
+        includeFee: false,
+      });
       // TODO: use market order?
     }
   }
 
-  transaction(from, to, price, amount, includeFee = true) {
-    // TODO: Test
+  // amount is in from currency
+  transaction(from, to, price, amount, options: ITransactionOptions = {}) {
+    const { includeFee = true, time = null } = options;
 
     const priceWithFee = price + (includeFee ? this.calculateFee(price) : 0);
     const amount1 = amount;
@@ -78,13 +82,11 @@ export default class Exchange {
     this.lastTick = data;
 
     this.orderbook.forEach((order) => {
-      const transaction = (amount: number) => {
-        const updates = this.transaction(
-          order.symbol,
-          "USD",
-          data.price,
-          amount
-        );
+      const transactQuote = (amount: number) => {
+        this.transaction(order.symbol, "USD", data.price, amount, {
+          includeFee: true,
+          time: new Date(data.time * 1000),
+        });
         this.clearOrder(order);
       };
 
