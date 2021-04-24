@@ -94,6 +94,10 @@ export default class Exchange {
         this.clearOrder(order);
       };
 
+      if (order.sellAll) {
+        order.amount = this.portfolio.getFunds(order.symbol);
+      }
+
       if (order.symbol !== data.symbol) {
         return;
       }
