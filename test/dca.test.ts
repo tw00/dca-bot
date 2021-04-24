@@ -8,9 +8,11 @@ describe("DCA Bot", () => {
   let bot;
   const price = 1000.0;
   let spend = 0;
+  let bought = 0;
 
   beforeAll(() => {
     bot = new DCABot("Test", { symbol: "BTC" });
+    bot.fee = 0;
   });
 
   it("initialize correctly", async () => {
@@ -33,6 +35,7 @@ describe("DCA Bot", () => {
     expect(order.type).toBe(OrderType.MARKET);
     expect(order.amount).toBe(0.025);
     spend += order.amount * price;
+    bought += order.amount;
   });
 
   it("not buy", async () => {
@@ -48,6 +51,7 @@ describe("DCA Bot", () => {
     expect(order.side).toBe(OrderSide.BUY);
     expect(order.amount * t).toBe(bot.config.safetyOrder);
     spend += order.amount * t;
+    bought += order.amount;
   });
 
   it("buy once below 2nd threshold", async () => {
@@ -57,6 +61,7 @@ describe("DCA Bot", () => {
     expect(order.side).toBe(OrderSide.BUY);
     expect(order.amount * t).toBe(50 * 1.05);
     spend += order.amount * t;
+    bought += order.amount;
   });
 
   it("sell when taking 1% profit", async () => {
@@ -64,8 +69,9 @@ describe("DCA Bot", () => {
     expect(bot.active).toBe(3);
     const [order] = bot.decide({ symbol: "BTC", time: 4, price: t });
     expect(order.side).toBe(OrderSide.SELL);
-    expect(order.amount * t).toBe(25 + 50 + 50 * 1.05);
-    const gainPercent = ((order.amount * price) / spend - 1) * 100;
+    expect(order.sellAll).toBe(true);
+    const gainPercent = ((bought * price) / spend - 1) * 100;
+    console.log("gainPercent", gainPercent);
     expect(gainPercent).toBeGreaterThan(bot.config.takeProfit);
     expect(bot.active).toBe(0);
   });
