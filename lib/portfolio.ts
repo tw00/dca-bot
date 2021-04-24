@@ -2,9 +2,12 @@ export interface PositionUpdate {
   symbol: string;
   amount: number;
   price: number;
+  time?: Date;
 }
 
-export interface Transaction extends PositionUpdate {}
+export interface Transaction extends PositionUpdate {
+  balance?: number;
+}
 
 interface PositionMap {
   [key: string]: number;
@@ -26,13 +29,9 @@ export default class Portfolio {
       this.positions[position.symbol] = 0;
     }
     this.positions[position.symbol] += position.amount;
-    this.transactions.push(position);
-  }
-
-  removePosition(position: PositionUpdate): void {
-    this.addPosition({
+    this.transactions.push({
       ...position,
-      amount: -position.amount,
+      balance: this.getFunds(position.symbol),
     });
   }
 

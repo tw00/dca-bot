@@ -9,11 +9,13 @@ export interface TickInfo {
 
 export default class Exchange {
   orderbook: Order[];
+  executedOrder: Order[];
   lastTick: TickInfo | null;
   portfolio: Portfolio;
 
   constructor() {
     this.orderbook = [];
+    this.executedOrder = [];
     this.lastTick = null;
     this.portfolio = new Portfolio();
   }
@@ -23,6 +25,7 @@ export default class Exchange {
   }
 
   clearOrder(order) {
+    this.executedOrder.push(order);
     this.orderbook = this.orderbook.filter((o) => o !== order);
   }
 
@@ -58,12 +61,14 @@ export default class Exchange {
       amount: amount1,
       symbol: from,
       price,
+      time,
     });
 
     this.portfolio.addPosition({
       amount: amount2,
       symbol: to,
       price,
+      time,
     });
   }
 
