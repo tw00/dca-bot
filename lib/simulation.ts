@@ -1,5 +1,5 @@
 import Exchange, { TickInfo } from "./exchange";
-import DB, { CoinbaseTickerData } from "./db";
+import DB, { CoinbaseTickerData, DBType } from "./db";
 import Bot from "../bots/bot";
 
 export default class Simulation {
@@ -32,7 +32,10 @@ export default class Simulation {
 
   async run(): Promise<void> {
     return new Promise((resolve) => {
-      const db = new DB(`${this.options.symbol}-USD`);
+      const db = new DB<CoinbaseTickerData>(
+        `${this.options.symbol}-USD`,
+        DBType.TICK
+      );
 
       db.readStream(this.tick.bind(this), () => {
         this.exchange.closePosition(this.options.symbol);

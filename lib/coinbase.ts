@@ -1,9 +1,11 @@
-const WebSocket = require("ws");
-const levelup = require("levelup");
-const leveldown = require("leveldown");
+import WebSocket from "ws";
 
-class CoinbaseClient {
-  constructor() {
+export default class CoinbaseWebsocketClient {
+  ws: WebSocket;
+  subscriber: { [key: string]: Function };
+
+  // @ts-ignore
+  constructor(): Promise<CoinbaseWebsocketClient> {
     const url = "wss://ws-feed.pro.coinbase.com";
     const ws = new WebSocket(url);
 
@@ -19,6 +21,7 @@ class CoinbaseClient {
       this.onMessage(JSON.parse(data));
     });
 
+    // @ts-ignore
     return ready;
   }
 
@@ -49,30 +52,3 @@ class CoinbaseClient {
     }
   }
 }
-
-class Feed {
-  constructor(name) {
-    const db = levelup(leveldown(`./db/${name}`));
-    this.db = db;
-  }
-
-  append(data) {
-    const key = +new Date(data.time);
-    const value = JSON.stringify(data);
-    this.db.put(key, value);
-  }
-}
-
-(async () => {
-  const market = "BTC-USD";
-  // const market = "ETH-USD";
-  const feed = new Feed(market);
-  const client = await new CoinbaseClient();
-  client.subscribe(market, (data) => {
-    process.stdout.write(".");
-    if (Math.random() < 0.001) {
-      console.log(data);
-    }
-    feed.append(data);
-  });
-})();
