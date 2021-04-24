@@ -9,7 +9,7 @@ type PlotType = Plot["type"];
 
 async function plotHistoric(pair) {
   const db = new DB<CoinbaseHistoricalData>(pair, DBType.HISTORIC);
-  const data = await db.read(null, null);
+  const data = await db.read();
   const plotData: Plot[] = [
     {
       x: data.map((x) => x.time),
@@ -26,7 +26,7 @@ async function plotHistoric(pair) {
 
 async function plotTicker(pair) {
   const db = new DB<CoinbaseTickerData>(pair, DBType.TICK);
-  const data = await db.read(null, null);
+  const data = await db.read();
   const start = +new Date(data[0].time);
   const plotData: Plot[] = [
     {
@@ -40,8 +40,16 @@ async function plotTicker(pair) {
 }
 
 (async () => {
-  // const pair = "ETH-USD"
-  const pair = "BTC-USD";
-  plotHistoric(pair);
-  // plotTicker(pair);
+  const type = process.argv.pop();
+  const pair = process.argv.pop();
+  if (!(Object.values(DBType) as string[]).includes(type)) {
+    console.log("Invalid type:", type);
+    process.exit(1);
+  }
+  if (!pair.match(/[A-Z]{3,}\-[A-Z]{3,}/)) {
+    console.log("Invalid pair:", pair);
+    process.exit(1);
+  }
+  if (type === DBType.HISTORIC) plotHistoric(pair);
+  if (type === DBType.TICK) plotTicker(pair);
 })();

@@ -9,13 +9,26 @@ const {
 } = require("rate-limiter-flexible");
 
 const COINBASE_SANDBOX_URL = "https://api-public.sandbox.pro.coinbase.com";
-const COINBASE_URL = "https://api.pro.coinbase.com";
-const DRY = false;
+const COINBASE_PROD_URL = "https://api.pro.coinbase.com";
+
+// const startDate = new Date().setHours(0, 0, 0, 0);
+const startDateString = process.argv.pop();
+const startDate = new Date(startDateString);
+const productId = process.argv.pop();
+const dryRun = process.argv.includes("--dry");
+const coinbasUrl = process.argv.includes("--sandbox")
+  ? COINBASE_SANDBOX_URL
+  : COINBASE_PROD_URL;
+
+if (!productId.match(/[A-Z]{3,}\-[A-Z]{3,}/)) {
+  console.log("Invalid productId:", productId);
+  process.exit(1);
+}
 
 const rateStart = +new Date();
 const fetchCoinbase = async (path) => {
   console.log("REQ", path, (+new Date() - rateStart) / 1000);
-  const response = await fetch(COINBASE_URL + path, {});
+  const response = await fetch(coinbasUrl + path, {});
   const data = await response.json();
   return data;
 };
@@ -35,11 +48,7 @@ async function throttledFetch(url) {
   return await fetchCoinbase(url);
 }
 
-// const productId = "BTC-USD";
-const productId = "REN-USD";
 const feed = new DB<CoinbaseHistoricalData>(productId, DBType.HISTORIC);
-// const startDate = new Date().setHours(0, 0, 0, 0);
-const startDate = new Date("2021-04-01T04:00:00.000Z");
 
 let current = +startDate;
 let dryReqCount = 0;
@@ -61,7 +70,7 @@ while (current < +new Date()) {
     granularity: granularity,
   };
 
-  if (DRY) {
+  if (dryRun) {
     console.log(JSON.stringify(params));
     dryReqCount += 1;
     continue;
@@ -98,6 +107,6 @@ while (current < +new Date()) {
   );
 }
 
-if (DRY) {
+if (dryRun) {
   console.log("Dry run. Request #", dryReqCount);
 }

@@ -6,7 +6,8 @@ Uses Coinbase API to collect historic data (takes care of rate-limiting and
 300 max candle limitation as well):
 
 ```bash
-ts-node rates/historic.ts
+ts-node rates/historic.ts BTC-USD 2021-04-01T04:00:00Z
+# Syntax: ts-node rates/historic.ts [--sandbox] [--dry] <pair> <start-date>
 ```
 
 ### Gathering Ticker Data
@@ -14,19 +15,24 @@ ts-node rates/historic.ts
 Subscribe to Coinbase WebSocket and stream to DB:
 
 ```bash
-ts-node rates/subscribe.ts
+ts-node rates/subscribe.ts BTC-USD
+# Syntax: ts-node rates/subscribe.ts <pair>
 ```
+
+### View Data
 
 Read DB:
 
 ```bash
-ts-node rates/read.ts
+ts-node rates/read.ts BTC-USD
+# Syntax: ts-node rates/read.ts <pair>
 ```
 
 Plot result:
 
 ```bash
-ts-node rates/plot.ts
+ts-node rates/plot.ts historic BTC-USD
+# Syntax: ts-node rates/plot.ts <historic|tick> <pair>
 ```
 
 ### Simulation
