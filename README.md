@@ -1,17 +1,32 @@
 ## DCA Bot
 
+### Gathering Historic Data
+
+Uses Coinbase API to collect historic data (takes care of rate-limiting and
+300 max candle limitation as well):
+
+```bash
+ts-node rates/historic.ts
+```
+
 ### Gathering Ticker Data
 
 Subscribe to Coinbase WebSocket and stream to DB:
 
 ```bash
-node subscribe.ts
+ts-node rates/subscribe.ts
 ```
 
 Read DB:
 
 ```bash
-node read.ts
+ts-node rates/read.ts
+```
+
+Plot result:
+
+```bash
+ts-node rates/plot.ts
 ```
 
 ### Simulation
