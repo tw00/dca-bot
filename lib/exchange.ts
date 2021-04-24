@@ -61,7 +61,18 @@ export default class Exchange {
       this.portfolio.getFunds(from) + amount1 < 0 ||
       this.portfolio.getFunds(to) + amount2 < 0
     ) {
-      console.warn("Insufficient funds: Order rejected.");
+      // TODO: Also include failed transactions
+      console.warn("Insufficient funds: Order rejected.\n", {
+        time,
+        from,
+        to,
+        price,
+        amount,
+        balanceFrom: this.portfolio.positions[from],
+        balanceTo: this.portfolio.positions[to],
+        balanceFromNew: this.portfolio.getFunds(from) + amount1,
+        balanceToNew: this.portfolio.getFunds(to) + amount2,
+      });
       return;
     }
 
