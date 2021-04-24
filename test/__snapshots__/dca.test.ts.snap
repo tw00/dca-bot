@@ -5,6 +5,7 @@ Array [
   Object {
     "amountSpendBase": 20.836806134355726,
     "averagePrice": 1.1998,
+    "feeBaseTotal": 0,
     "maxDrawdownBase": 25,
     "order": 25,
     "orderNo": 0,
@@ -15,6 +16,7 @@ Array [
   Object {
     "amountSpendBase": 63.36090028610211,
     "averagePrice": 1.1836953020134227,
+    "feeBaseTotal": 0,
     "maxDrawdownBase": 75,
     "order": 50,
     "orderNo": 1,
@@ -25,6 +27,7 @@ Array [
   Object {
     "amountSpendBase": 108.950911624034,
     "averagePrice": 1.170251795964543,
+    "feeBaseTotal": 0,
     "maxDrawdownBase": 127.5,
     "order": 52.5,
     "orderNo": 2,
@@ -35,6 +38,7 @@ Array [
   Object {
     "amountSpendBase": 157.86006144791523,
     "averagePrice": 1.1568790631711225,
+    "feeBaseTotal": 0,
     "maxDrawdownBase": 182.625,
     "order": 55.125,
     "orderNo": 3,
@@ -45,6 +49,7 @@ Array [
   Object {
     "amountSpendBase": 210.36641375909574,
     "averagePrice": 1.1432730429840352,
+    "feeBaseTotal": 0,
     "maxDrawdownBase": 240.50625,
     "order": 57.88125,
     "orderNo": 4,
@@ -55,6 +60,7 @@ Array [
   Object {
     "amountSpendBase": 266.775845845468,
     "averagePrice": 1.1293434813979364,
+    "feeBaseTotal": 0,
     "maxDrawdownBase": 301.2815625,
     "order": 60.775312500000005,
     "orderNo": 5,
@@ -65,6 +71,7 @@ Array [
   Object {
     "amountSpendBase": 327.4254550056507,
     "averagePrice": 1.1150496549472588,
+    "feeBaseTotal": 0,
     "maxDrawdownBase": 365.095640625,
     "order": 63.81407812500001,
     "orderNo": 6,
