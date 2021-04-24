@@ -34,10 +34,21 @@ const vincentConfig: IDCABotConfig = {
   safetyOrderDeviationScale: 1.06,
 };
 
+const thomasConfig: IDCABotConfig = {
+  baseOrder: 20,
+  safetyOrder: 40,
+  takeProfit: 1, // percent
+  maxCount: 6,
+  safetyOrderDeviation: 2.5, // percent
+  safetyOrderVolumeScale: 1.2,
+  safetyOrderDeviationScale: 1.06,
+};
+
 export default {
   TradeAltCoins: tradeAltsConfig,
   Vincent: vincentConfig,
+  Thomas: thomasConfig,
   Test: testConfig,
 };
 
-export type ConfigPreset = "Test" | "TradeAltCoins" | "Vincent";
+export type ConfigPreset = "Test" | "TradeAltCoins" | "Vincent" | "Thomas";
