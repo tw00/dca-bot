@@ -40,6 +40,12 @@ export enum DBType {
 }
 
 type DataCallback<T> = (data: T) => void;
+type EndCallback = () => void;
+
+interface IReadOptions {
+  from?: number;
+  to?: number;
+}
 
 export default class DB<T extends CoinbaseHistoricalData | CoinbaseTickerData> {
   db: LevelUp;
@@ -61,9 +67,23 @@ export default class DB<T extends CoinbaseHistoricalData | CoinbaseTickerData> {
     this.db.del(key);
   }
 
-  readStream(dataCb: DataCallback<T>, endCb) {
+  _streamOptions({ from, to }: IReadOptions) {
+    const options = {
+      ...(from ? { gte: from } : {}),
+      ...(to ? { lte: to } : {}),
+    };
+    return options;
+  }
+
+  readStream(
+    dataCb: DataCallback<T>,
+    endCb: EndCallback,
+    readOptions: IReadOptions = {}
+  ) {
+    const options = this._streamOptions(readOptions);
+
     this.db
-      .createReadStream()
+      .createReadStream(options)
       .on("data", (raw) => {
         const data = JSON.parse(raw.value.toString()) as T;
         data.key = raw.key.toString();
@@ -77,12 +97,9 @@ export default class DB<T extends CoinbaseHistoricalData | CoinbaseTickerData> {
       });
   }
 
-  read(from: number = null, to: number = null): Promise<T[]> {
+  read(readOptions: IReadOptions = {}): Promise<T[]> {
     const result = [];
-    const options = {
-      ...(from ? { gte: from } : {}),
-      ...(to ? { lte: to } : {}),
-    };
+    const options = this._streamOptions(readOptions);
 
     return new Promise((resolve, reject) => {
       this.db
