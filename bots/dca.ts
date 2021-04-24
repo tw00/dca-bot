@@ -126,14 +126,7 @@ export default class DCABot implements Bot {
       const baseOrderQuote = this.config.baseOrder / tick.price;
       this.active = 1;
       this.tab = this.crunch(tick.price);
-      return [
-        new Order(
-          OrderSide.BUY,
-          OrderType.MARKET,
-          this.config.symbol,
-          baseOrderQuote
-        ),
-      ];
+      return [Order.Buy(baseOrderQuote, this.config.symbol).atMarketRate()];
       // TODO: Immediatley place sell order?
     }
 
@@ -145,12 +138,9 @@ export default class DCABot implements Bot {
       this.reset();
       this.completedDeals += 1;
       return [
-        new Order(
-          OrderSide.SELL,
-          OrderType.MARKET,
-          this.config.symbol,
-          amountBoughtBase / tick.price
-        ),
+        // amountBoughtQuote
+        // amountBoughtBase / tick.price
+        Order.SellAll(this.config.symbol).atMarketRate(),
       ];
     }
 
@@ -162,12 +152,10 @@ export default class DCABot implements Bot {
         this.active += 1;
 
         return [
-          new Order(
-            OrderSide.BUY,
-            OrderType.MARKET,
-            this.config.symbol,
-            safetyOrderAmountBase / tick.price // TODO
-          ),
+          Order.Buy(
+            safetyOrderAmountBase / tick.price,
+            this.config.symbol
+          ).atMarketRate(),
         ];
       }
     }

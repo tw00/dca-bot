@@ -5,20 +5,8 @@ describe("orderbook", () => {
   it("should work", async () => {
     const sim = new Simulation({ symbol: "BTC" });
 
-    const testorder1 = new Order(
-      OrderSide.BUY,
-      OrderType.STOP,
-      "BTC",
-      0.01,
-      56205
-    );
-    const testorder2 = new Order(
-      OrderSide.SELL,
-      OrderType.STOP,
-      "BTC",
-      0.005,
-      56202
-    );
+    const testorder1 = Order.Buy(0.01, "BTC").atStopPrice(56205);
+    const testorder2 = Order.Sell(0.05, "BTC").atStopPrice(56202);
 
     sim.exchange.addOrder(testorder1);
     sim.exchange.addOrder(testorder2);
