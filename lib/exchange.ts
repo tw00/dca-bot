@@ -7,7 +7,11 @@ export interface TickInfo {
   price: number;
 }
 
+export interface ITransactionOptions {
+  includeFee?: boolean;
+  time?: Date;
 }
+
 export default class Exchange {
   orderbook: Order[];
   executedOrder: Order[];
@@ -96,23 +100,23 @@ export default class Exchange {
 
       if (order.type === OrderType.MARKET) {
         if (order.side === OrderSide.BUY) {
-          transaction(order.amount);
+          transactQuote(order.amount);
         }
         if (order.side === OrderSide.SELL) {
-          transaction(-order.amount);
+          transactQuote(-order.amount);
         }
       }
 
       if (order.type === OrderType.STOP) {
         if (order.side === OrderSide.BUY) {
           if (order.price >= data.price) {
-            transaction(order.amount);
+            transactQuote(order.amount);
           }
         }
 
         if (order.side === OrderSide.SELL) {
           if (order.price <= data.price) {
-            transaction(-order.amount);
+            transactQuote(-order.amount);
           }
         }
       }
