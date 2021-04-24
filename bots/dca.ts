@@ -23,6 +23,7 @@ export interface IDCAStep {
   price: number;
   averagePrice: number;
   profitTargetBase: number;
+  feeBaseTotal: number;
 
   // amountSpend
   // averagePrice
@@ -45,10 +46,12 @@ export default class DCABot implements Bot {
   tab: IDCAStep[];
   active: number;
   completedDeals: number;
+  fee: number;
 
-  constructor(preset: ConfigPreset, options: Partial<IDCABotConfig>) {
+  constructor(preset: ConfigPreset, options: Partial<IDCABotConfig> = {}) {
     this.config = { ...configs[preset], ...options };
     this.completedDeals = 0;
+    this.fee = 0.5;
     this.reset();
   }
 
@@ -64,6 +67,7 @@ export default class DCABot implements Bot {
     let amountSpendBase = this.config.baseOrder / entryPrice;
     let averagePrice = entryPrice;
     let profitTargetBase = averagePrice * (1 + this.config.takeProfit / 100);
+    let feeBaseTotal = this.config.baseOrder * (this.fee / 100);
 
     steps.push({
       orderNo: 0,
@@ -74,26 +78,27 @@ export default class DCABot implements Bot {
       price: entryPrice,
       averagePrice,
       profitTargetBase,
+      feeBaseTotal,
     });
 
-    let price, fee;
+    let price;
     for (const orderNo of range(1, this.config.maxCount)) {
       safetyOrderDeviation +=
         this.config.safetyOrderDeviation +
         safetyOrderDeviation * (this.config.safetyOrderDeviationScale - 1);
 
-      // TODO: Add fee
-      fee = 0;
       safetyOrderAmountBase =
         safetyOrderAmountBase *
-          (orderNo > 1 ? this.config.safetyOrderVolumeScale : 1) +
-        fee;
+        (orderNo > 1 ? this.config.safetyOrderVolumeScale : 1);
       price = entryPrice * (1 - safetyOrderDeviation / 100);
+      feeBaseTotal += safetyOrderAmountBase * (this.fee / 100);
 
       maxDrawdownBase += safetyOrderAmountBase;
       amountSpendBase += safetyOrderAmountBase / price;
       averagePrice = maxDrawdownBase / amountSpendBase;
-      profitTargetBase = averagePrice * (1 + this.config.takeProfit / 100);
+      profitTargetBase =
+        feeBaseTotal / maxDrawdownBase +
+        averagePrice * (1 + this.config.takeProfit / 100);
 
       steps.push({
         orderNo,
@@ -104,6 +109,7 @@ export default class DCABot implements Bot {
         price,
         averagePrice,
         profitTargetBase, // = requiredPrice
+        feeBaseTotal,
       });
     }
     return steps;
