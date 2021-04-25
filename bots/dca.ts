@@ -216,4 +216,13 @@ export default class DCABot implements Bot {
 
     return null;
   }
+
+  print(): void {
+    console.log("=".repeat(40));
+    console.log("Total Profit:", this.profit);
+    console.log("Completed Deals:", this.completedDeals);
+    console.log("Fees:", this.fee);
+    console.log("Current Step:", this.active);
+    console.log("=".repeat(40));
+  }
 }

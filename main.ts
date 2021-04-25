@@ -14,11 +14,11 @@ import { DBType } from "./lib/db";
 
   const bot = new DCABot("Thomas", { symbol: sim.options.symbol });
   sim.addBot(bot);
-  console.log(sim);
 
   await sim.init(10000);
   await sim.run();
 
-  console.log(bot);
   sim.exchange.portfolio.print();
+  console.log();
+  bot.print();
 })();
