@@ -1,5 +1,6 @@
 import { plot, Plot } from "nodeplotlib";
 import DB, { DBType, ITickerData, IHistoricalData } from "../lib/DB";
+import { guessPrice } from "../lib/utils";
 
 type PlotType = Plot["type"];
 
@@ -8,13 +9,12 @@ async function plotHistoric(pair) {
   const data = await db.read();
   const plotData: Plot[] = [
     {
-      x: data.map((x) => x.time),
+      x: data.map((x) => new Date(1000 * x.time)),
       // y: data.map((x) => x.low - x.high),
-      y: data.map((x) => (x.low + x.high) / 2),
+      y: data.map((x) => guessPrice(x)),
       type: "line" as PlotType,
     },
   ];
-
   console.log("Start:", new Date(1000 * data[0].time));
   console.log("End:  ", new Date(1000 * data[data.length - 1].time));
   plot(plotData);
@@ -26,7 +26,7 @@ async function plotTicker(pair) {
   const start = +new Date(data[0].time);
   const plotData: Plot[] = [
     {
-      x: data.map((x) => (+new Date(x.time) - start) / 1000.0),
+      x: data.map((x) => (+new Date(x.time * 1000) - start) / 1000.0),
       y: data.map((x) => Number(x.price)),
       type: "line" as PlotType,
     },
@@ -36,8 +36,8 @@ async function plotTicker(pair) {
 }
 
 (async () => {
-  const type = process.argv.pop();
   const pair = process.argv.pop();
+  const type = process.argv.pop();
   if (!(Object.values(DBType) as string[]).includes(type)) {
     console.log("Invalid type:", type);
     process.exit(1);

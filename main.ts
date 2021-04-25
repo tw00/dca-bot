@@ -18,6 +18,8 @@ import { DBType } from "./lib/db";
   await sim.init(10000);
   await sim.run();
 
+  sim.print();
+  console.log();
   sim.exchange.portfolio.print();
   console.log();
   bot.print();

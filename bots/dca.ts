@@ -61,6 +61,7 @@ export default class DCABot implements Bot {
   config: IDCABotConfig;
   tab: IDCAStep[];
   active: number;
+  orderHistory: Order[];
   completedDeals: number;
   fee: number;
   profit: number;
@@ -70,6 +71,7 @@ export default class DCABot implements Bot {
     this.completedDeals = 0;
     this.fee = 0.5;
     this.profit = 0;
+    this.orderHistory = [];
     this.restart();
   }
 
@@ -178,6 +180,7 @@ export default class DCABot implements Bot {
       // TODO: Place limit order instead
       orders.push(Order.Buy(baseOrderQuote, this.config.symbol).atMarketRate());
       this.active = 1;
+      this.orderHistory.push(...orders);
       return orders;
     }
 
@@ -194,6 +197,7 @@ export default class DCABot implements Bot {
       const totalFees = step.buyFeeBase + sellFeeBase;
       this.profit += tick.price * step.volumeBoughtQuote - totalFees;
       this.restart();
+      this.orderHistory.push(...orders);
       return orders;
     }
 
@@ -210,6 +214,7 @@ export default class DCABot implements Bot {
         );
 
         this.active += 1;
+        this.orderHistory.push(...orders);
         return orders;
       }
     }
@@ -219,10 +224,12 @@ export default class DCABot implements Bot {
 
   print(): void {
     console.log("=".repeat(40));
+    console.log(" ".repeat(17) + "DCA BOT");
     console.log("Total Profit:", this.profit);
     console.log("Completed Deals:", this.completedDeals);
     console.log("Fees:", this.fee);
     console.log("Current Step:", this.active);
+    // console.log("Order History:", this.orderHistory);
     console.log("=".repeat(40));
   }
 }

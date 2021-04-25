@@ -84,7 +84,7 @@ export default class Portfolio {
       amountTo: amount1,
       balanceFrom: this.getFunds(from),
       balanceTo: this.getFunds(to),
-      time: new Date(time),
+      time: new Date(time * 1000),
       // value: portfolio value
       // fee
     });
@@ -103,9 +103,10 @@ export default class Portfolio {
 
   print(): void {
     console.log("=".repeat(40));
+    console.log(" ".repeat(16) + "PORTFOLIO");
     console.log("Transactions:", this.transactions);
-    console.log("-".repeat(40));
-    console.log("Positions:", this.positions);
+    console.log();
+    console.log("Positions:", JSON.stringify(this.positions, null, 2));
     console.log("=".repeat(40));
   }
 }

@@ -88,4 +88,15 @@ export default class Simulation {
     if (this.options.verbose) console.log("tick:", tick);
     this.exchange.feed(tick);
   }
+
+  print(): void {
+    console.log("=".repeat(40));
+    console.log(" ".repeat(16) + "SIMULATION");
+    console.log("From:  ", this.options.from);
+    console.log("To:    ", this.options.to);
+    console.log("Symbol:", this.options.symbol);
+    console.log("Fee:   ", this.options.fee, "%");
+    console.log("Type:  ", this.options.type);
+    console.log("=".repeat(40));
+  }
 }
