@@ -9,9 +9,8 @@ interface ISimulationOptions {
   type?: DBType;
   symbol: string;
   fee: number;
+  verbose?: boolean;
 }
-
-const SHOW_TICKS = false;
 
 export default class Simulation {
   exchange: Exchange;
@@ -24,6 +23,7 @@ export default class Simulation {
     this.options = {
       type: DBType.TICK,
       symbol: "ETH",
+      verbose: false,
       ...options,
     };
   }
@@ -80,12 +80,12 @@ export default class Simulation {
       const orders = bot.decide(tick);
 
       if (orders) {
-        console.log("Bot created order", orders);
+        if (this.options.verbose) console.log("Bot created order", orders);
         orders.forEach((order) => this.exchange.addOrder(order));
       }
     }
 
-    if (SHOW_TICKS) console.log("tick:", tick);
+    if (this.options.verbose) console.log("tick:", tick);
     this.exchange.feed(tick);
   }
 }
