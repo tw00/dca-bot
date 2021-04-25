@@ -1,17 +1,16 @@
 export interface IPositionUpdate {
   symbol: string;
   amount: number;
-  price: number;
-  time?: Date;
 }
 
 export interface ITransaction {
-  from: string;
-  to: string;
+  transfer: string;
   price: number;
-  amount: number;
+  amountTo: number;
+  amountFrom: number;
   time: Date;
-  balance?: number;
+  balanceTo: number;
+  balanceFrom: number;
 }
 
 export interface ITransactionOptions {
@@ -73,18 +72,21 @@ export default class Portfolio {
       return;
     }
 
-    this.updatePosition({
-      amount: amount1,
-      symbol: from,
-      price,
-      time,
-    });
+    this.updatePosition({ amount: amount1, symbol: from });
+    this.updatePosition({ amount: amount2, symbol: to });
 
-    this.updatePosition({
-      amount: amount2,
-      symbol: to,
+    this.transactions.push({
+      transfer:
+        `${from}${amount > 0 ? "<-" : "->"}${to}` +
+        ` (${amount > 0 ? "buying" : "selling"} ${from})`,
       price,
-      time,
+      amountFrom: amount2,
+      amountTo: amount1,
+      balanceFrom: this.getFunds(from),
+      balanceTo: this.getFunds(to),
+      time: new Date(time),
+      // value: portfolio value
+      // fee
     });
   }
 

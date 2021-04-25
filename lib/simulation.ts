@@ -36,7 +36,6 @@ export default class Simulation {
     this.exchange.portfolio.updatePosition({
       amount: initialCapital,
       symbol: "USD",
-      price: 1,
     });
   }
 

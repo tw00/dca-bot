@@ -63,12 +63,13 @@ export default class DCABot implements Bot {
   active: number;
   completedDeals: number;
   fee: number;
+  profit: number;
 
   constructor(preset: ConfigPreset, options: Partial<IDCABotConfig> = {}) {
     this.config = { ...configs[preset], ...options };
     this.completedDeals = 0;
     this.fee = 0.5;
-    this.reset();
+    this.restart();
   }
 
   withFee(fee: number): DCABot {
@@ -76,7 +77,7 @@ export default class DCABot implements Bot {
     return this;
   }
 
-  reset(): void {
+  restart(): void {
     this.active = 0;
   }
 
@@ -187,7 +188,9 @@ export default class DCABot implements Bot {
       // orders.push(Order.Sell(step.volumeBoughtQuote, this.config.symbol).atMarketRate());
       orders.push(Order.SellAll(this.config.symbol).atMarketRate());
       this.completedDeals += 1;
-      this.reset();
+      const totalFees = step.totalFees; // TODO: re-calculate
+      this.profit += tick.price * step.volumeBoughtQuote - totalFees;
+      this.restart();
       return orders;
     }
 
