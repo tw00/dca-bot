@@ -6,11 +6,12 @@ export interface IPositionUpdate {
 export interface ITransaction {
   transfer: string;
   price: number;
-  amountTo: number;
   amountFrom: number;
+  amountTo: number;
   time: Date;
   balanceTo: number;
   balanceFrom: number;
+  fee: number;
 }
 
 export interface ITransactionOptions {
@@ -43,8 +44,8 @@ export default class Portfolio {
 
   // amount is in from currency
   transaction(
-    from: string,
     to: string,
+    from: string, // = USD
     price: number,
     amount: number,
     options: ITransactionOptions = {}
@@ -52,11 +53,14 @@ export default class Portfolio {
     const { includeFee = true, time = null } = options;
 
     const priceWithFee = price + (includeFee ? this.calculateFee(price) : 0);
-    const amount1 = amount;
-    const amount2 = -priceWithFee * amount;
+    const amountTo = amount;
+    const amountFrom = -priceWithFee * amount;
 
     // check funds
-    if (this.getFunds(from) + amount1 < 0 || this.getFunds(to) + amount2 < 0) {
+    if (
+      this.getFunds(to) + amountTo < 0 ||
+      this.getFunds(from) + amountFrom < 0
+    ) {
       // TODO: Also include failed transactions
       console.warn("Insufficient funds: Order rejected.\n", {
         time,
@@ -66,27 +70,27 @@ export default class Portfolio {
         amount,
         balanceFrom: this.getFunds(from),
         balanceTo: this.getFunds(to),
-        balanceFromNew: this.getFunds(from) + amount1,
-        balanceToNew: this.getFunds(to) + amount2,
+        balanceFromNew: this.getFunds(from) + amountFrom,
+        balanceToNew: this.getFunds(to) + amountTo,
       });
       return;
     }
 
-    this.updatePosition({ amount: amount1, symbol: from });
-    this.updatePosition({ amount: amount2, symbol: to });
+    this.updatePosition({ amount: amountTo, symbol: to });
+    this.updatePosition({ amount: amountFrom, symbol: from });
 
     this.transactions.push({
       transfer:
-        `${from}${amount > 0 ? "<-" : "->"}${to}` +
-        ` (${amount > 0 ? "buying" : "selling"} ${from})`,
+        `${from}${amount > 0 ? "->" : "<-"}${to}` +
+        ` (${amount > 0 ? "buying" : "selling"} ${to})`,
       price,
-      amountFrom: amount2,
-      amountTo: amount1,
-      balanceFrom: this.getFunds(from),
+      amountTo,
+      amountFrom,
       balanceTo: this.getFunds(to),
-      time: new Date(time * 1000),
+      balanceFrom: this.getFunds(from),
+      fee: Math.abs(amount) * this.calculateFee(price),
+      time: time && new Date(time),
       // value: portfolio value
-      // fee
     });
   }
 

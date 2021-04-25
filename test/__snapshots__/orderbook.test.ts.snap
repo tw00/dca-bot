@@ -3,30 +3,31 @@
 exports[`orderbook should work 1`] = `
 Array [
   "\\"========================================\\"",
+  "\\"                PORTFOLIO\\"",
   "\\"Transactions:\\" [
   {
-    \\"transfer\\": \\"BTC<-USD (buying BTC)\\",
+    \\"transfer\\": \\"USD->BTC (buying BTC)\\",
     \\"price\\": 56203.88,
-    \\"amountFrom\\": -562.0388,
     \\"amountTo\\": 0.01,
-    \\"balanceFrom\\": 0.01,
-    \\"balanceTo\\": 437.96119999999996,
+    \\"amountFrom\\": -562.0388,
+    \\"balanceTo\\": 0.01,
+    \\"balanceFrom\\": 437.96119999999996,
+    \\"fee\\": 0,
     \\"time\\": \\"+053273-03-15T16:25:47.000Z\\"
   },
   {
-    \\"transfer\\": \\"BTC->USD (selling BTC)\\",
+    \\"transfer\\": \\"USD<-BTC (selling BTC)\\",
     \\"price\\": 56202.01,
-    \\"amountFrom\\": 562.0201000000001,
     \\"amountTo\\": -0.01,
-    \\"balanceFrom\\": 0,
-    \\"balanceTo\\": 999.9813,
-    \\"time\\": \\"1970-01-01T00:00:00.000Z\\"
+    \\"amountFrom\\": 562.0201000000001,
+    \\"balanceTo\\": 0,
+    \\"balanceFrom\\": 999.9813,
+    \\"fee\\": 0,
+    \\"time\\": null
   }
 ]",
-  "\\"Positions:\\" {
-  \\"USD\\": 999.9813,
-  \\"BTC\\": 0
-}",
+  "",
+  "\\"Positions:\\" \\"{\\\\n  \\\\\\"USD\\\\\\": 999.9813,\\\\n  \\\\\\"BTC\\\\\\": 0\\\\n}\\"",
   "\\"========================================\\"",
 ]
 `;
