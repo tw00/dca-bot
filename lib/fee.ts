@@ -29,7 +29,7 @@ export function getDiscountedFee(
   volumeLast30Days: number,
   exchange = "coinbase"
 ): IFeeTabEntry {
-  assert(volumeLast30Days >= 0);
+  assert(volumeLast30Days >= 0, "volumeLast30Days must be positive");
   const fee = fees[exchange];
   const idx = fee.findIndex((x) => volumeLast30Days < x.thres);
   return fee[(idx === -1 ? fee.length : idx) - 1];
