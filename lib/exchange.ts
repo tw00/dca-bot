@@ -1,5 +1,6 @@
 import Order, { OrderSide, OrderType } from "./order";
-import Portfolio, { PositionUpdate } from "./portfolio";
+import Portfolio from "./portfolio";
+import { getDiscountedFee } from "../lib/fee";
 
 export interface TickInfo {
   symbol: string;
@@ -7,9 +8,9 @@ export interface TickInfo {
   price: number;
 }
 
-export interface ITransactionOptions {
-  includeFee?: boolean;
-  time?: Date;
+export interface IExchangeOptions {
+  fee?: number;
+  volumeLast30Days?: number;
 }
 
 export default class Exchange {
@@ -18,11 +19,13 @@ export default class Exchange {
   lastTick: TickInfo | null;
   portfolio: Portfolio;
 
-  constructor() {
+  constructor({ volumeLast30Days, fee }: IExchangeOptions) {
     this.orderbook = [];
     this.executedOrder = [];
     this.lastTick = null;
-    this.portfolio = new Portfolio();
+    this.portfolio = new Portfolio({
+      fee: volumeLast30Days ? getDiscountedFee(volumeLast30Days).makerFee : fee,
+    });
   }
 
   addOrder(order) {
@@ -34,61 +37,14 @@ export default class Exchange {
     this.orderbook = this.orderbook.filter((o) => o !== order);
   }
 
-  calculateFee(price) {
-    return (0.25 / 100) * price;
-  }
-
   closePosition(symbol) {
     if (symbol == this.lastTick.symbol) {
       const amount = -this.portfolio.getFunds(symbol);
-      this.transaction(symbol, "USD", this.lastTick.price, amount, {
+      this.portfolio.transaction(symbol, "USD", this.lastTick.price, amount, {
         includeFee: false,
       });
       // TODO: use market order?
     }
-  }
-
-  // amount is in from currency
-  transaction(from, to, price, amount, options: ITransactionOptions = {}) {
-    const { includeFee = true, time = null } = options;
-
-    const priceWithFee = price + (includeFee ? this.calculateFee(price) : 0);
-    const amount1 = amount;
-    const amount2 = -priceWithFee * amount;
-
-    // check funds
-    if (
-      this.portfolio.getFunds(from) + amount1 < 0 ||
-      this.portfolio.getFunds(to) + amount2 < 0
-    ) {
-      // TODO: Also include failed transactions
-      console.warn("Insufficient funds: Order rejected.\n", {
-        time,
-        from,
-        to,
-        price,
-        amount,
-        balanceFrom: this.portfolio.positions[from],
-        balanceTo: this.portfolio.positions[to],
-        balanceFromNew: this.portfolio.getFunds(from) + amount1,
-        balanceToNew: this.portfolio.getFunds(to) + amount2,
-      });
-      return;
-    }
-
-    this.portfolio.addPosition({
-      amount: amount1,
-      symbol: from,
-      price,
-      time,
-    });
-
-    this.portfolio.addPosition({
-      amount: amount2,
-      symbol: to,
-      price,
-      time,
-    });
   }
 
   feed(data: TickInfo): void {
@@ -98,7 +54,7 @@ export default class Exchange {
 
     this.orderbook.forEach((order) => {
       const transactQuote = (amount: number) => {
-        this.transaction(order.symbol, "USD", data.price, amount, {
+        this.portfolio.transaction(order.symbol, "USD", data.price, amount, {
           includeFee: true,
           time: new Date(data.time * 1000),
         });

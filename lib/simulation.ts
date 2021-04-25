@@ -8,6 +8,7 @@ interface ISimulationOptions {
   to?: Date;
   symbol: string;
   type: DBType;
+  fee: number;
 }
 
 const SHOW_TICKS = false;
@@ -18,7 +19,7 @@ export default class Simulation {
   options: ISimulationOptions;
 
   constructor(options: Partial<ISimulationOptions> = {}) {
-    this.exchange = new Exchange();
+    this.exchange = new Exchange({ fee: options.fee });
     this.bots = [];
     this.options = {
       type: DBType.TICK,
@@ -28,11 +29,11 @@ export default class Simulation {
   }
 
   addBot(bot: Bot) {
-    this.bots.push(bot);
+    this.bots.push(bot.withFee(this.options.fee));
   }
 
   async init(initialCapital: number = 1000) {
-    this.exchange.portfolio.addPosition({
+    this.exchange.portfolio.updatePosition({
       amount: initialCapital,
       symbol: "USD",
       price: 1,

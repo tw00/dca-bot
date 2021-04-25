@@ -3,7 +3,6 @@ import Order from "../lib/order";
 import { TickInfo } from "../lib/exchange";
 import { range } from "../lib/utils";
 import configs, { ConfigPreset } from "./dca-config";
-import { getDiscountedFee } from "../lib/fee";
 
 export interface IDCABotConfig {
   symbol?: "ETH" | "BTC" | "REN" | string;
@@ -67,8 +66,8 @@ export default class DCABot implements Bot {
     this.reset();
   }
 
-  withFee(volumeLast30Days) {
-    this.fee = getDiscountedFee(volumeLast30Days).makerFee;
+  withFee(fee) {
+    this.fee = fee;
     return this;
   }
 
