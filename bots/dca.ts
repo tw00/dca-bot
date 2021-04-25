@@ -15,27 +15,42 @@ export interface IDCABotConfig {
 }
 
 export interface IDCAStep {
+  // The order number, 0 is the base order
   orderNo: number;
-  safetyOrderDeviation: number;
-  order: number;
-  maxDrawdownBase: number;
-  amountSpendBase: number;
-  price: number;
-  averagePrice: number;
-  profitTargetBase: number;
-  feeBaseTotal: number;
 
-  // amountSpend
-  // averagePrice
-  // amountBought
-  // lastPrice
-  // profitTargetBase
+  // Safety order deviation in percent
+  // Price deviation to open safety orders (% from initial order)
+  safetyOrderDeviation: number;
+
+  // Current order volume
+  orderAmountBase: number;
+
+  // Respective quote size
+  orderSizeQuote: number;
+
+  // Total amount spend with fees (Total Volume)
+  amountSpendBase: number;
+
+  // Total amount spend including fees (Maximum Drawdown)
+  // = amountSpendBase + fee
+  maxDrawdownBase: number;
+
+  // Volume/Size bought in the quote currency
+  volumeBoughtQuote: number;
+
+  // Price at which order is triggered (= nextThresholdBase)
+  price: number;
+
+  // Average entry price (= amount spend / volume bought)
+  averageEntryPrice: number;
+
+  // Required price to make 1%/TP% profit including fees
+  // TODO: Rename to profitTargetQuote / profitTargetPrice
   // profitTargetQuote
-  // safetyOrderDeviation
-  // nextThresholdBase
-  // nextThresholdQuote
-  // safetyOrderAmountBase
-  // safetyOrderAmountQuote
+  profitTargetBase: number; // = requiredPrice
+
+  // Total fees (without selling fee)
+  buyFeeBase: number;
 }
 
 const range = (from, to) =>
@@ -51,7 +66,7 @@ export default class DCABot implements Bot {
   constructor(preset: ConfigPreset, options: Partial<IDCABotConfig> = {}) {
     this.config = { ...configs[preset], ...options };
     this.completedDeals = 0;
-    this.fee = 0.5;
+    this.fee = 0.5; // TODO: Move to config?
     this.reset();
   }
 
@@ -59,26 +74,38 @@ export default class DCABot implements Bot {
     this.active = 0;
   }
 
+  calcFeeFactor() {
+    const feeFactor =
+      (1 + this.fee / 100 + this.config.takeProfit / 100) /
+      (1 - this.fee / 100);
+    return feeFactor;
+  }
+
   crunch(entryPrice: number): IDCAStep[] {
     const steps: IDCAStep[] = [];
     let safetyOrderDeviation = 0;
     let safetyOrderAmountBase = this.config.safetyOrder;
-    let maxDrawdownBase = this.config.baseOrder;
-    let amountSpendBase = this.config.baseOrder / entryPrice;
-    let averagePrice = entryPrice;
-    let profitTargetBase = averagePrice * (1 + this.config.takeProfit / 100);
-    let feeBaseTotal = this.config.baseOrder * (this.fee / 100);
+    let amountSpendBase = this.config.baseOrder;
+    let orderSizeQuote = this.config.baseOrder / entryPrice;
+    let volumeBoughtQuote = orderSizeQuote;
+    let averageEntryPrice = entryPrice;
+    let profitTargetBase = this.calcFeeFactor() * entryPrice;
+    // let profitTargetBase = averageEntryPrice * (1 + this.config.takeProfit / 100);
+    let buyFeeBase = this.config.baseOrder * (this.fee / 100);
+    let maxDrawdownBase = amountSpendBase + buyFeeBase;
 
     steps.push({
       orderNo: 0,
+      orderAmountBase: this.config.baseOrder,
+      orderSizeQuote,
       safetyOrderDeviation,
-      order: this.config.baseOrder,
-      maxDrawdownBase,
       amountSpendBase,
+      volumeBoughtQuote,
+      maxDrawdownBase,
       price: entryPrice,
-      averagePrice,
+      averageEntryPrice,
       profitTargetBase,
-      feeBaseTotal,
+      buyFeeBase,
     });
 
     let price;
@@ -91,25 +118,36 @@ export default class DCABot implements Bot {
         safetyOrderAmountBase *
         (orderNo > 1 ? this.config.safetyOrderVolumeScale : 1);
       price = entryPrice * (1 - safetyOrderDeviation / 100);
-      feeBaseTotal += safetyOrderAmountBase * (this.fee / 100);
+      orderSizeQuote = safetyOrderAmountBase / price;
 
-      maxDrawdownBase += safetyOrderAmountBase;
-      amountSpendBase += safetyOrderAmountBase / price;
-      averagePrice = maxDrawdownBase / amountSpendBase;
+      amountSpendBase += safetyOrderAmountBase;
+      volumeBoughtQuote += safetyOrderAmountBase / price;
+      averageEntryPrice = amountSpendBase / volumeBoughtQuote;
+
+      buyFeeBase += safetyOrderAmountBase * (this.fee / 100);
+      maxDrawdownBase = amountSpendBase + buyFeeBase;
+
+      // const feeRate = buyFeeBase / amountSpendBase + 1;
+      // const feeRate = 1 + this.fee / 100;
+      // profitTargetBase = feeRate * averageEntryPrice * (1 + this.config.takeProfit / 100);
+
+      // TODO: 3commas does not show fee in table, but internally includes it
+      //       according to docs. Need to check this from real transactions!!
       profitTargetBase =
-        feeBaseTotal / maxDrawdownBase +
-        averagePrice * (1 + this.config.takeProfit / 100);
+        this.calcFeeFactor() * (amountSpendBase / volumeBoughtQuote);
 
       steps.push({
         orderNo,
+        maxDrawdownBase,
         safetyOrderDeviation,
-        order: safetyOrderAmountBase,
-        maxDrawdownBase, // = amountBoughtBase
+        orderAmountBase: safetyOrderAmountBase,
+        orderSizeQuote,
         amountSpendBase,
+        volumeBoughtQuote,
         price,
-        averagePrice,
-        profitTargetBase, // = requiredPrice
-        feeBaseTotal,
+        averageEntryPrice,
+        profitTargetBase,
+        buyFeeBase,
       });
     }
     return steps;
@@ -138,7 +176,6 @@ export default class DCABot implements Bot {
 
     const step = this.tab[this.active];
     const profitTargetBase = step.profitTargetBase;
-    const amountBoughtBase = step.maxDrawdownBase - step.order;
 
     if (tick.price > profitTargetBase) {
       this.reset();
@@ -152,7 +189,7 @@ export default class DCABot implements Bot {
 
     if (this.active > 0 && this.active < this.config.maxCount) {
       const nextThresholdBase = step.price;
-      const safetyOrderAmountBase = step.order;
+      const safetyOrderAmountBase = step.orderAmountBase;
 
       if (tick.price <= nextThresholdBase) {
         this.active += 1;

@@ -28,6 +28,14 @@ describe("DCA Bot", () => {
     expect(roundBy(maxDeviation, 2)).toBe(12.3);
   });
 
+  it("crunch correctly with fee", () => {
+    // TODO: Check volumeBoughtQuote with different fee
+    const bot2 = new DCABot("Thomas", { symbol: "REN" });
+    bot2.fee = 0.5; // 3Commas does not take fee discounts into account
+    const steps = bot2.crunch(0.772);
+    expect(steps).toMatchSnapshot();
+  });
+
   it("make base order ASAP", async () => {
     const [order] = bot.decide({ symbol: "BTC", time: 0, price });
     expect(bot.active).toBe(1);
@@ -71,7 +79,6 @@ describe("DCA Bot", () => {
     expect(order.side).toBe(OrderSide.SELL);
     expect(order.sellAll).toBe(true);
     const gainPercent = ((bought * price) / spend - 1) * 100;
-    console.log("gainPercent", gainPercent);
     expect(gainPercent).toBeGreaterThan(bot.config.takeProfit);
     expect(bot.active).toBe(0);
   });
