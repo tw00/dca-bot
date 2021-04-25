@@ -104,6 +104,7 @@ export default class Portfolio {
   print(): void {
     console.log("=".repeat(40));
     console.log("Transactions:", this.transactions);
+    console.log("-".repeat(40));
     console.log("Positions:", this.positions);
     console.log("=".repeat(40));
   }
