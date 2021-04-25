@@ -9,7 +9,9 @@ import { DBType } from "./lib/db";
     to: new Date("2021-04-18 16:48:12"),
     symbol: "REN",
     type: DBType.HISTORIC,
+    fee: 0.5,
   });
+
   const bot = new DCABot("Thomas", { symbol: sim.options.symbol });
   sim.addBot(bot);
   console.log(sim);

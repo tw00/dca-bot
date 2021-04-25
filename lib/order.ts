@@ -24,15 +24,15 @@ export default class Order {
   amount: number;
   sellAll: boolean;
 
-  static Buy(amount, symbol) {
+  static Buy(amount: number, symbol: string): Order {
     return new Order(OrderSide.BUY, OrderType.MARKET, symbol, amount);
   }
 
-  static SellAll(symbol) {
+  static SellAll(symbol: string): Order {
     return new Order(OrderSide.SELL, OrderType.MARKET, symbol, 0, 0, true);
   }
 
-  static Sell(amount, symbol) {
+  static Sell(amount: number, symbol: string): Order {
     return new Order(OrderSide.SELL, OrderType.MARKET, symbol, amount);
   }
 
@@ -52,12 +52,12 @@ export default class Order {
     this.sellAll = sellAll;
   }
 
-  atMarketRate() {
+  atMarketRate(): Order {
     this.type = OrderType.MARKET;
     return this;
   }
 
-  atStopPrice(price) {
+  atStopPrice(price: number): Order {
     this.type = OrderType.STOP;
     this.price = price;
     return this;

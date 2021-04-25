@@ -1,14 +1,10 @@
 import { plot, Plot } from "nodeplotlib";
-import DB, {
-  DBType,
-  CoinbaseHistoricalData,
-  CoinbaseTickerData,
-} from "../lib/DB";
+import DB, { DBType, ITickerData, IHistoricalData } from "../lib/DB";
 
 type PlotType = Plot["type"];
 
 async function plotHistoric(pair) {
-  const db = new DB<CoinbaseHistoricalData>(pair, DBType.HISTORIC);
+  const db = new DB<IHistoricalData>(pair, DBType.HISTORIC);
   const data = await db.read();
   const plotData: Plot[] = [
     {
@@ -25,7 +21,7 @@ async function plotHistoric(pair) {
 }
 
 async function plotTicker(pair) {
-  const db = new DB<CoinbaseTickerData>(pair, DBType.TICK);
+  const db = new DB<ITickerData>(pair, DBType.TICK);
   const data = await db.read();
   const start = +new Date(data[0].time);
   const plotData: Plot[] = [
@@ -46,7 +42,7 @@ async function plotTicker(pair) {
     console.log("Invalid type:", type);
     process.exit(1);
   }
-  if (!pair.match(/[A-Z]{3,}\-[A-Z]{3,}/)) {
+  if (!pair.match(/[A-Z]{3,}-[A-Z]{3,}/)) {
     console.log("Invalid pair:", pair);
     process.exit(1);
   }

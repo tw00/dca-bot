@@ -8,6 +8,7 @@
     "plugin:@typescript-eslint/recommended"
   ],
   "rules": {
-    "no-console": 0
+    "no-console": 0,
+    "@typescript-eslint/no-inferrable-types": [1, { "ignoreParameters": true }]
   }
 }

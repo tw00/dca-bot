@@ -1,13 +1,13 @@
 import Exchange, { TickInfo } from "./exchange";
-import DB, { CoinbaseTickerData, DBType } from "./db";
+import DB, { DBType, ITickerData, IHistoricalData } from "./db";
 import Bot from "../bots/bot";
 import { guessPrice } from "./utils";
 
 interface ISimulationOptions {
   from?: Date;
   to?: Date;
+  type?: DBType;
   symbol: string;
-  type: DBType;
   fee: number;
 }
 
@@ -18,7 +18,7 @@ export default class Simulation {
   bots: Bot[];
   options: ISimulationOptions;
 
-  constructor(options: Partial<ISimulationOptions> = {}) {
+  constructor(options: ISimulationOptions) {
     this.exchange = new Exchange({ fee: options.fee });
     this.bots = [];
     this.options = {
@@ -28,11 +28,11 @@ export default class Simulation {
     };
   }
 
-  addBot(bot: Bot) {
+  addBot(bot: Bot): void {
     this.bots.push(bot.withFee(this.options.fee));
   }
 
-  async init(initialCapital: number = 1000) {
+  async init(initialCapital: number = 1000): Promise<void> {
     this.exchange.portfolio.updatePosition({
       amount: initialCapital,
       symbol: "USD",
@@ -42,7 +42,7 @@ export default class Simulation {
 
   async run(): Promise<void> {
     return new Promise((resolve) => {
-      const db = new DB<CoinbaseTickerData>(
+      const db = new DB<ITickerData>(
         `${this.options.symbol}-USD`,
         this.options.type
       );
@@ -63,17 +63,17 @@ export default class Simulation {
     });
   }
 
-  tick(data: CoinbaseTickerData) {
+  tick(data: ITickerData | IHistoricalData): void {
     const tick: TickInfo =
       this.options.type === DBType.TICK
         ? {
-            price: Number(data.price),
-            time: +new Date(data.time),
+            price: Number((data as ITickerData).price),
+            time: +new Date((data as ITickerData).time),
             symbol: this.options.symbol,
           }
         : {
-            price: guessPrice(data),
-            time: data.time,
+            price: guessPrice(data as IHistoricalData),
+            time: (data as IHistoricalData).time,
             symbol: this.options.symbol,
           };
 

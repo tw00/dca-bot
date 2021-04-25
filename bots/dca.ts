@@ -52,6 +52,11 @@ export interface IDCAStep {
   buyFeeBase: number;
 }
 
+interface ISummaryReturnValue {
+  maxBotUsageBase: number;
+  maxDeviation: number;
+}
+
 export default class DCABot implements Bot {
   config: IDCABotConfig;
   tab: IDCAStep[];
@@ -66,16 +71,16 @@ export default class DCABot implements Bot {
     this.reset();
   }
 
-  withFee(fee) {
+  withFee(fee: number): DCABot {
     this.fee = fee;
     return this;
   }
 
-  reset() {
+  reset(): void {
     this.active = 0;
   }
 
-  calcFeeFactor() {
+  calcFeeFactor(): number {
     const feeFactor =
       (1 + this.fee / 100 + this.config.takeProfit / 100) /
       (1 - this.fee / 100);
@@ -149,7 +154,7 @@ export default class DCABot implements Bot {
     return steps;
   }
 
-  summary(entryPrice: number) {
+  summary(entryPrice: number): ISummaryReturnValue {
     const steps = this.crunch(entryPrice);
 
     // Max amount for bot usage (Based on current rate)

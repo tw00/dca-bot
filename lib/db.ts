@@ -1,31 +1,26 @@
 import { default as levelup, LevelUp } from "levelup";
 import { default as leveldown } from "leveldown";
 
-export interface TimeIndexableData {
+export interface ITimeIndexableData {
   type: string;
   key?: number;
   time: number;
 }
 
-export interface CoinbaseTickerData extends TimeIndexableData {
+export interface ITickerData extends ITimeIndexableData {
   type: "ticker";
-  sequence: number;
-  product_id: string;
-  price: string; // TODO: convert to number
-  open_24h: string;
-  volume_24h: string;
-  low_24h: string;
-  high_24h: string;
-  volume_30d: string;
-  best_bid: string;
-  best_ask: string;
+  price: number;
+  open_24h: number;
+  volume_24h: number;
+  low_24h: number;
+  high_24h: number;
+  volume_30d: number;
+  best_bid: number;
+  best_ask: number;
   side: string;
-  // time: Date; // TODO !!
-  trade_id: number;
-  last_size: string;
 }
 
-export interface CoinbaseHistoricalData extends TimeIndexableData {
+export interface IHistoricalData extends ITimeIndexableData {
   type: "candle";
   low: number;
   high: number;
@@ -47,27 +42,32 @@ interface IReadOptions {
   to?: number;
 }
 
-export default class DB<T extends CoinbaseHistoricalData | CoinbaseTickerData> {
+interface IStreamOptions {
+  gte?: number;
+  lte?: number;
+}
+
+export default class DB<T extends IHistoricalData | ITickerData> {
   db: LevelUp;
   type: DBType;
 
-  constructor(name, type: DBType) {
+  constructor(name: string, type: DBType) {
     const db = levelup(leveldown(`./db/${name}-${type}`));
     this.db = db;
     this.type = type;
   }
 
-  append(data: T) {
+  append(data: T): void {
     const key = +new Date(data.time);
     const value = JSON.stringify(data);
     this.db.put(key, value);
   }
 
-  delete(key: number) {
+  delete(key: number): void {
     this.db.del(key);
   }
 
-  _streamOptions({ from, to }: IReadOptions) {
+  _streamOptions({ from, to }: IReadOptions): IStreamOptions {
     const options = {
       ...(from ? { gte: from } : {}),
       ...(to ? { lte: to } : {}),
@@ -79,7 +79,7 @@ export default class DB<T extends CoinbaseHistoricalData | CoinbaseTickerData> {
     dataCb: DataCallback<T>,
     endCb: EndCallback,
     readOptions: IReadOptions = {}
-  ) {
+  ): void {
     const options = this._streamOptions(readOptions);
 
     this.db

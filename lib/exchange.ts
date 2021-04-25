@@ -28,16 +28,16 @@ export default class Exchange {
     });
   }
 
-  addOrder(order) {
+  addOrder(order: Order): void {
     this.orderbook.push(order);
   }
 
-  clearOrder(order) {
+  clearOrder(order: Order): void {
     this.executedOrder.push(order);
     this.orderbook = this.orderbook.filter((o) => o !== order);
   }
 
-  closePosition(symbol) {
+  closePosition(symbol: string): void {
     if (symbol == this.lastTick.symbol) {
       const amount = -this.portfolio.getFunds(symbol);
       this.portfolio.transaction(symbol, "USD", this.lastTick.price, amount, {

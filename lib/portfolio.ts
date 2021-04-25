@@ -5,7 +5,12 @@ export interface IPositionUpdate {
   time?: Date;
 }
 
-export interface ITransaction extends IPositionUpdate {
+export interface ITransaction {
+  from: string;
+  to: string;
+  price: number;
+  amount: number;
+  time: Date;
   balance?: number;
 }
 
@@ -33,12 +38,18 @@ export default class Portfolio {
     this.fee = fee;
   }
 
-  calculateFee(price) {
+  calculateFee(price: number): number {
     return (this.fee / 100) * price;
   }
 
   // amount is in from currency
-  transaction(from, to, price, amount, options: ITransactionOptions = {}) {
+  transaction(
+    from: string,
+    to: string,
+    price: number,
+    amount: number,
+    options: ITransactionOptions = {}
+  ): void {
     const { includeFee = true, time = null } = options;
 
     const priceWithFee = price + (includeFee ? this.calculateFee(price) : 0);
@@ -54,8 +65,8 @@ export default class Portfolio {
         to,
         price,
         amount,
-        balanceFrom: this.positions[from],
-        balanceTo: this.positions[to],
+        balanceFrom: this.getFunds(from),
+        balanceTo: this.getFunds(to),
         balanceFromNew: this.getFunds(from) + amount1,
         balanceToNew: this.getFunds(to) + amount2,
       });
@@ -78,23 +89,17 @@ export default class Portfolio {
   }
 
   updatePosition(position: IPositionUpdate): void {
-    // console.log("New position", position);
-
     if (!(position.symbol in this.positions)) {
       this.positions[position.symbol] = 0;
     }
     this.positions[position.symbol] += position.amount;
-    this.transactions.push({
-      ...position,
-      balance: this.getFunds(position.symbol),
-    });
   }
 
-  getFunds(symbol) {
+  getFunds(symbol: string): number {
     return this.positions[symbol] || 0;
   }
 
-  print() {
+  print(): void {
     console.log("=".repeat(40));
     console.log("Transactions:", this.transactions);
     console.log("Positions:", this.positions);

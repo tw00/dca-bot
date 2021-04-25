@@ -1,12 +1,8 @@
 /*
  */
-import DB, { DBType, CoinbaseHistoricalData } from "../lib/db";
 import fetch from "node-fetch";
-
-const {
-  RateLimiterMemory,
-  RateLimiterQueue,
-} = require("rate-limiter-flexible");
+import { RateLimiterMemory, RateLimiterQueue } from "rate-limiter-flexible";
+import DB, { DBType, IHistoricalData } from "../lib/db";
 
 const COINBASE_SANDBOX_URL = "https://api-public.sandbox.pro.coinbase.com";
 const COINBASE_PROD_URL = "https://api.pro.coinbase.com";
@@ -20,7 +16,7 @@ const coinbasUrl = process.argv.includes("--sandbox")
   ? COINBASE_SANDBOX_URL
   : COINBASE_PROD_URL;
 
-if (!productId.match(/[A-Z]{3,}\-[A-Z]{3,}/)) {
+if (!productId.match(/[A-Z]{3,}-[A-Z]{3,}/)) {
   console.log("Invalid productId:", productId);
   process.exit(1);
 }
@@ -48,7 +44,7 @@ async function throttledFetch(url) {
   return await fetchCoinbase(url);
 }
 
-const feed = new DB<CoinbaseHistoricalData>(productId, DBType.HISTORIC);
+const feed = new DB<IHistoricalData>(productId, DBType.HISTORIC);
 
 let current = +startDate;
 let dryReqCount = 0;
