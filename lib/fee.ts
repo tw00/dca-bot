@@ -1,6 +1,13 @@
 import { strict as assert } from "assert";
 
-const feeCoinbase = [
+interface IFeeTabEntry {
+  thres: number;
+  tier: string;
+  takerFee: number; // percentage
+  makerFee: number; // percentage
+}
+
+const feeCoinbase: IFeeTabEntry[] = [
   { thres: 0, tier: "Up to $10k", takerFee: 0.5, makerFee: 0.5 },
   { thres: 10 * 1e3, tier: "$10k - $50k", takerFee: 0.35, makerFee: 0.35 },
   { thres: 50 * 1e3, tier: "$50k - $100k", takerFee: 0.25, makerFee: 0.15 },
@@ -18,7 +25,10 @@ const fees = {
   coinbase: feeCoinbase,
 };
 
-export function getFee(volumeLast30Days, exchange = "coinbase") {
+export function getDiscountedFee(
+  volumeLast30Days: number,
+  exchange = "coinbase"
+): IFeeTabEntry {
   assert(volumeLast30Days >= 0);
   const fee = fees[exchange];
   const idx = fee.findIndex((x) => volumeLast30Days < x.thres);

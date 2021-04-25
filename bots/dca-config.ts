@@ -1,7 +1,6 @@
 import { IDCABotConfig } from "./dca";
 
 const testConfig: IDCABotConfig = {
-  symbol: "ETH",
   baseOrder: 25,
   safetyOrder: 50,
   takeProfit: 1.5, // percent
@@ -12,7 +11,6 @@ const testConfig: IDCABotConfig = {
 };
 
 const tradeAltsConfig: IDCABotConfig = {
-  symbol: "ETH",
   baseOrder: 25,
   safetyOrder: 50,
   takeProfit: 1.5, // percent
@@ -24,7 +22,6 @@ const tradeAltsConfig: IDCABotConfig = {
 };
 
 const vincentConfig: IDCABotConfig = {
-  symbol: "ETH",
   baseOrder: 20, // 40
   safetyOrder: 40, // 80
   takeProfit: 1, // percent

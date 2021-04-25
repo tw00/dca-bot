@@ -1,7 +1,9 @@
 import Bot from "./bot";
-import Order, { OrderSide, OrderType } from "../lib/order";
+import Order from "../lib/order";
 import { TickInfo } from "../lib/exchange";
+import { range } from "../lib/utils";
 import configs, { ConfigPreset } from "./dca-config";
+import { getDiscountedFee } from "../lib/fee";
 
 export interface IDCABotConfig {
   symbol?: "ETH" | "BTC" | "REN" | string;
@@ -45,16 +47,11 @@ export interface IDCAStep {
   averageEntryPrice: number;
 
   // Required price to make 1%/TP% profit including fees
-  // TODO: Rename to profitTargetQuote / profitTargetPrice
-  // profitTargetQuote
-  profitTargetBase: number; // = requiredPrice
+  profitTargetPrice: number;
 
   // Total fees (without selling fee)
   buyFeeBase: number;
 }
-
-const range = (from, to) =>
-  [...Array(to - from + 1).keys()].map((v) => v + from);
 
 export default class DCABot implements Bot {
   config: IDCABotConfig;
@@ -66,8 +63,13 @@ export default class DCABot implements Bot {
   constructor(preset: ConfigPreset, options: Partial<IDCABotConfig> = {}) {
     this.config = { ...configs[preset], ...options };
     this.completedDeals = 0;
-    this.fee = 0.5; // TODO: Move to config?
+    this.fee = 0.5;
     this.reset();
+  }
+
+  withFee(volumeLast30Days) {
+    this.fee = getDiscountedFee(volumeLast30Days).makerFee;
+    return this;
   }
 
   reset() {
@@ -89,8 +91,7 @@ export default class DCABot implements Bot {
     let orderSizeQuote = this.config.baseOrder / entryPrice;
     let volumeBoughtQuote = orderSizeQuote;
     let averageEntryPrice = entryPrice;
-    let profitTargetBase = this.calcFeeFactor() * entryPrice;
-    // let profitTargetBase = averageEntryPrice * (1 + this.config.takeProfit / 100);
+    let profitTargetPrice = this.calcFeeFactor() * entryPrice;
     let buyFeeBase = this.config.baseOrder * (this.fee / 100);
     let maxDrawdownBase = amountSpendBase + buyFeeBase;
 
@@ -104,7 +105,7 @@ export default class DCABot implements Bot {
       maxDrawdownBase,
       price: entryPrice,
       averageEntryPrice,
-      profitTargetBase,
+      profitTargetPrice,
       buyFeeBase,
     });
 
@@ -127,13 +128,9 @@ export default class DCABot implements Bot {
       buyFeeBase += safetyOrderAmountBase * (this.fee / 100);
       maxDrawdownBase = amountSpendBase + buyFeeBase;
 
-      // const feeRate = buyFeeBase / amountSpendBase + 1;
-      // const feeRate = 1 + this.fee / 100;
-      // profitTargetBase = feeRate * averageEntryPrice * (1 + this.config.takeProfit / 100);
-
       // TODO: 3commas does not show fee in table, but internally includes it
       //       according to docs. Need to check this from real transactions!!
-      profitTargetBase =
+      profitTargetPrice =
         this.calcFeeFactor() * (amountSpendBase / volumeBoughtQuote);
 
       steps.push({
@@ -146,7 +143,7 @@ export default class DCABot implements Bot {
         volumeBoughtQuote,
         price,
         averageEntryPrice,
-        profitTargetBase,
+        profitTargetPrice,
         buyFeeBase,
       });
     }
@@ -166,40 +163,41 @@ export default class DCABot implements Bot {
   }
 
   decide(tick: TickInfo): Order[] {
+    const orders = [];
+
     if (this.active === 0) {
-      const baseOrderQuote = this.config.baseOrder / tick.price;
-      this.active = 1;
       this.tab = this.crunch(tick.price);
-      return [Order.Buy(baseOrderQuote, this.config.symbol).atMarketRate()];
+      const baseOrderQuote = this.tab[0].orderSizeQuote;
       // TODO: Immediatley place sell order?
+      // TODO: Place limit order instead
+      orders.push(Order.Buy(baseOrderQuote, this.config.symbol).atMarketRate());
+      this.active = 1;
+      return orders;
     }
 
     const step = this.tab[this.active];
-    const profitTargetBase = step.profitTargetBase;
+    const profitTargetPrice = step.profitTargetPrice;
 
-    if (tick.price > profitTargetBase) {
-      this.reset();
+    if (tick.price >= profitTargetPrice) {
+      // TODO: volumeBoughtQuote is off by a tiny amount
+      // orders.push(Order.Sell(step.volumeBoughtQuote, this.config.symbol).atMarketRate());
+      orders.push(Order.SellAll(this.config.symbol).atMarketRate());
       this.completedDeals += 1;
-      return [
-        // amountBoughtQuote
-        // amountBoughtBase / tick.price
-        Order.SellAll(this.config.symbol).atMarketRate(),
-      ];
+      this.reset();
+      return orders;
     }
 
     if (this.active > 0 && this.active < this.config.maxCount) {
       const nextThresholdBase = step.price;
-      const safetyOrderAmountBase = step.orderAmountBase;
+      const safetyOrderAmountQuote = step.orderSizeQuote;
 
       if (tick.price <= nextThresholdBase) {
-        this.active += 1;
+        orders.push(
+          Order.Buy(safetyOrderAmountQuote, this.config.symbol).atMarketRate()
+        );
 
-        return [
-          Order.Buy(
-            safetyOrderAmountBase / tick.price,
-            this.config.symbol
-          ).atMarketRate(),
-        ];
+        this.active += 1;
+        return orders;
       }
     }
 
