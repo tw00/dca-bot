@@ -188,7 +188,8 @@ export default class DCABot implements Bot {
       // orders.push(Order.Sell(step.volumeBoughtQuote, this.config.symbol).atMarketRate());
       orders.push(Order.SellAll(this.config.symbol).atMarketRate());
       this.completedDeals += 1;
-      const totalFees = step.totalFees; // TODO: re-calculate
+      const totalFees =
+        step.buyFeeBase + this.fee * tick.price * step.volumeBoughtQuote;
       this.profit += tick.price * step.volumeBoughtQuote - totalFees;
       this.restart();
       return orders;
