@@ -12,6 +12,18 @@ interface ISimulationOptions {
   verbose?: boolean;
 }
 
+const dbMemoized = {};
+function getDb({ symbol, type }: ISimulationOptions): DB<ITickerData> {
+  const key = `${symbol}--${type}`;
+  if (key in dbMemoized) {
+    return dbMemoized[key];
+  } else {
+    const db = new DB<ITickerData>(`${symbol}-USD`, type);
+    dbMemoized[key] = db;
+    return db;
+  }
+}
+
 export default class Simulation {
   exchange: Exchange;
   bots: Bot[];
@@ -41,10 +53,7 @@ export default class Simulation {
 
   async run(): Promise<void> {
     return new Promise((resolve) => {
-      const db = new DB<ITickerData>(
-        `${this.options.symbol}-USD`,
-        this.options.type
-      );
+      const db = getDb(this.options);
 
       const streamOptions = {
         from: +this.options.from,
