@@ -65,12 +65,14 @@ export default class DCABot implements Bot {
   completedDeals: number;
   fee: number;
   profit: number;
+  maxDrawdown: number;
 
   constructor(preset: ConfigPreset, options: Partial<IDCABotConfig> = {}) {
     this.config = { ...configs[preset], ...options };
     this.completedDeals = 0;
     this.fee = 0.5;
     this.profit = 0;
+    this.maxDrawdown = 0;
     this.orderHistory = [];
     this.restart();
   }
@@ -180,7 +182,19 @@ export default class DCABot implements Bot {
       this.active = 1;
       orders.push(Order.Buy(baseOrderQuote, this.config.symbol).atMarketRate());
       this.orderHistory.push(...orders);
+      this.maxDrawdown = Math.max(
+        this.maxDrawdown,
+        this.tab[0].amountSpendBase
+      );
       return orders;
+
+      // TODO: Place limit order instead
+      // With a market order, the bot starts new deals instantly at actual
+      // rates. Use with caution on coins with low liquidity as it might lead to
+      // high buy prices. With a limit order, the bot places base order into
+      // exchange order book and waits for its fill. If it doesn't fill after
+      // some amount of time, the bot moves it higher. It might drastically
+      // increase deals start time on fast price moves.
     }
 
     const step = this.tab[this.active - 1];
@@ -213,6 +227,7 @@ export default class DCABot implements Bot {
           Order.Buy(safetyOrderAmountQuote, this.config.symbol).atMarketRate()
         );
 
+        this.maxDrawdown = Math.max(this.maxDrawdown, nextStep.amountSpendBase);
         this.active += 1;
         this.orderHistory.push(...orders);
         return orders;
