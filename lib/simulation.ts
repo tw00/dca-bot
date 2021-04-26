@@ -3,7 +3,7 @@ import DB, { DBType, ITickerData, IHistoricalData } from "./db";
 import Bot from "../bots/bot";
 import { guessPrice } from "./utils";
 
-interface ISimulationOptions {
+export interface ISimulationOptions {
   from?: Date;
   to?: Date;
   type?: DBType;

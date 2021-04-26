@@ -1,4 +1,4 @@
-import DCABot from "./bots/dca";
+import DCABot, { IDCABotConfig } from "./bots/dca";
 import Simulation from "./lib/simulation";
 import { DBType } from "./lib/db";
 
@@ -10,7 +10,7 @@ function randn() {
   return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
 }
 
-async function fitness(options): Promise<number> {
+export async function fitness(options: IDCABotConfig): Promise<number> {
   const optionsSanatized = {
     baseOrder: Math.max(0, options.baseOrder),
     safetyOrder: Math.max(0, options.safetyOrder),
@@ -41,8 +41,8 @@ async function fitness(options): Promise<number> {
   return bot.profit / bot.maxDrawdown;
 }
 
-(async () => {
-  const varParams = {
+export async function optimize(): Promise<IDCABotConfig> {
+  const varParams: IDCABotConfig = {
     baseOrder: 20 / 10,
     safetyOrder: 40 / 10,
     takeProfit: 1 / 20,
@@ -51,11 +51,11 @@ async function fitness(options): Promise<number> {
     safetyOrderVolumeScale: 0.2 / 10,
     safetyOrderDeviationScale: 0.06 / 10,
   };
-  let goodParams = {
+  let goodParams: IDCABotConfig = {
     baseOrder: 20,
     safetyOrder: 40,
     takeProfit: 1,
-    maxCount: 30,
+    maxCount: 6,
     safetyOrderDeviation: 2.5,
     safetyOrderVolumeScale: 1.2,
     safetyOrderDeviationScale: 1.06,
@@ -86,37 +86,11 @@ async function fitness(options): Promise<number> {
     // save results for visualization
     log.push([n, currentParams]);
   }
+
+  return goodParams;
+}
+
+(async () => {
+  const final = await optimize();
+  console.log("final", final);
 })();
-
-// -> 8.306430060154748
-const goodParams_Var100 = {
-  baseOrder: 22.5,
-  safetyOrder: 32,
-  takeProfit: 0.85,
-  maxCount: 6,
-  safetyOrderDeviation: 2.4,
-  safetyOrderVolumeScale: 1.18,
-  safetyOrderDeviationScale: 1.06,
-};
-
-// -> 17.210171545296703
-const goodParams_Var10 = {
-  baseOrder: 35,
-  safetyOrder: 12,
-  takeProfit: 0,
-  maxCount: 6,
-  safetyOrderDeviation: 5,
-  safetyOrderVolumeScale: 1.13,
-  safetyOrderDeviationScale: 1.01,
-};
-
-// -> 9.438425714845124
-const goodParams_Var10B = {
-  baseOrder: 19,
-  safetyOrder: 34,
-  takeProfit: 0.782,
-  maxCount: 40,
-  safetyOrderDeviation: 2.3,
-  safetyOrderVolumeScale: 1.07,
-  safetyOrderDeviationScale: 1.06,
-};

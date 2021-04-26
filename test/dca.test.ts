@@ -73,7 +73,7 @@ describe("DCA Bot", () => {
   });
 
   it("sell when taking 1% profit", async () => {
-    const t = price - 45 + 25;
+    const t = price - 45 + 40;
     expect(bot.active).toBe(3);
     const [order] = bot.decide({ symbol: "BTC", time: 4, price: t });
     expect(order.side).toBe(OrderSide.SELL);
