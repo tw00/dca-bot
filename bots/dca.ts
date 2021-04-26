@@ -177,14 +177,13 @@ export default class DCABot implements Bot {
       this.tab = this.crunch(tick.price);
       const baseOrderQuote = this.tab[0].orderSizeQuote;
       // TODO: Immediatley place sell order?
-      // TODO: Place limit order instead
-      orders.push(Order.Buy(baseOrderQuote, this.config.symbol).atMarketRate());
       this.active = 1;
+      orders.push(Order.Buy(baseOrderQuote, this.config.symbol).atMarketRate());
       this.orderHistory.push(...orders);
       return orders;
     }
 
-    const step = this.tab[this.active];
+    const step = this.tab[this.active - 1];
     const profitTargetPrice = step.profitTargetPrice;
 
     if (tick.price >= profitTargetPrice) {
@@ -201,12 +200,13 @@ export default class DCABot implements Bot {
       return orders;
     }
 
-    if (this.active > 0 && this.active < this.config.maxCount) {
-      const nextThresholdBase = step.price;
-      // step.price is not the same as tick.price, but orderSizeQuote is based
-      // on the step.price, so instead of using the pre-calculated
-      // step.orderSizeQuote, we calculate the quote size with the new price:
-      const safetyOrderAmountQuote = step.orderAmountBase / tick.price;
+    const nextStep = this.tab[this.active];
+    if (this.active <= this.config.maxCount) {
+      const nextThresholdBase = nextStep.price;
+      // nextStep.price is not the same as tick.price, but orderSizeQuote is
+      // based on the nextStep.price, so instead of using the pre-calculated
+      // nextStep.orderSizeQuote, we calculate the quote size with the new price:
+      const safetyOrderAmountQuote = nextStep.orderAmountBase / tick.price;
 
       if (tick.price <= nextThresholdBase) {
         orders.push(
