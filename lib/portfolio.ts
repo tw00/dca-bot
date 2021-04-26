@@ -8,7 +8,7 @@ export interface ITransaction {
   price: number;
   amountFrom: number;
   amountTo: number;
-  time: Date;
+  time: Date | string;
   balanceTo: number;
   balanceFrom: number;
   fee: number;
