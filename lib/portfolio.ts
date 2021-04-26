@@ -89,7 +89,7 @@ export default class Portfolio {
       balanceTo: this.getFunds(to),
       balanceFrom: this.getFunds(from),
       fee: Math.abs(amount) * this.calculateFee(price),
-      time: time && new Date(time),
+      time: time && new Date(time).toLocaleString(),
       // value: portfolio value
     });
   }
